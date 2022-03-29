@@ -31,3 +31,48 @@ class DatabaseIO:
                 self.cnx.close()
             if cursor is not None:
                 cursor.close()
+
+    def retrieveItemFromStorage(self, itemId: int, nrOfItems: int) -> Tuple[str, int] | None:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = "UPDATE storage SET amount = amount - " + str(nrOfItems) + " WHERE id = " + str(itemId)
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print(error)
+            return None
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        return self.getStorageData(itemId)
+
+    def getStorageData(self, itemId: int) -> Tuple[str, int] | None:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = "SELECT name, amount FROM storage WHERE id = " + str(itemId)
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
+            result = cursor.fetchone()
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print(error)
+            return None
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        return result
