@@ -101,7 +101,7 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
-        return {a: (b, c) for a, b, c in result}
+        return {a: {'name': b, 'amount': c} for a, b, c in result}
 
     def getStorageFullData(self) -> Dict | None:
         cursor = None
@@ -128,9 +128,9 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
-        return {a: (b, c) for a, b, c in result}
+        return {a: {'name': b, 'amount': c} for a, b, c in result}
 
-    def insertOrderData(self, values: Tuple[int, int, List[Tuple[int, int]]]) -> None:
+    def insertOrderData(self, values: Tuple[int, int, List[Tuple[int, int]]]) -> int | None:
         cursor = None
         try:
             self.establishConnection()
@@ -139,10 +139,12 @@ class DatabaseIO:
 
             cursor = self.cnx.cursor()
             cursor.execute(sql, (values[0], values[1], json.dumps(values[2])))
+            rowId = cursor.lastrowid
             self.cnx.commit()
 
         except mysql.connector.Error as error:
             print(error)
+            return None
         finally:
             if self.cnx.is_connected():
                 self.cnx.close()
@@ -150,3 +152,28 @@ class DatabaseIO:
                 cursor.close()
 
         self.retrieveItemFromStorage(values[2])
+        return rowId
+
+    def getOrder(self, orderId: int) -> Dict | None:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = "SELECT * FROM orders WHERE order_id = " + str(orderId)
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
+            result = cursor.fetchone()
+
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print(error)
+            return None
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        return {result[0]: {'tableNr': result[1], 'staffId': result[2], 'orderedItems': json.loads(result[3])}}
