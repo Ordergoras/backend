@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 import mysql.connector
 import os
 
@@ -32,15 +32,17 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
-    def retrieveItemFromStorage(self, itemId: int, nrOfItems: int) -> Tuple[str, int] | None:
+    def retrieveItemFromStorage(self, retrievedItems: List[Tuple[int, int]]) -> List[Tuple[str, int]] | None:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = "UPDATE storage SET amount = amount - " + str(nrOfItems) + " WHERE id = " + str(itemId)
+            for itemTuple in retrievedItems:
+                sql = "UPDATE storage SET amount = amount - " + str(itemTuple[1]) + " WHERE id = " + str(itemTuple[0])
 
-            cursor = self.cnx.cursor()
-            cursor.execute(sql)
+                cursor = self.cnx.cursor()
+                cursor.execute(sql)
+
             self.cnx.commit()
 
         except mysql.connector.Error as error:
@@ -52,18 +54,21 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
-        return self.getStorageData(itemId)
+        return self.getStorageData([item[0] for item in retrievedItems])
 
-    def getStorageData(self, itemId: int) -> Tuple[str, int] | None:
+    def getStorageData(self, itemIds: List[int]) -> List[Tuple[str, int]] | None:
         cursor = None
+        result = []
         try:
             self.establishConnection()
 
-            sql = "SELECT name, amount FROM storage WHERE id = " + str(itemId)
+            for itemId in itemIds:
+                sql = "SELECT name, amount FROM storage WHERE id = " + str(itemId)
 
-            cursor = self.cnx.cursor()
-            cursor.execute(sql)
-            result = cursor.fetchone()
+                cursor = self.cnx.cursor()
+                cursor.execute(sql)
+                result.append(cursor.fetchone())
+
             self.cnx.commit()
 
         except mysql.connector.Error as error:
