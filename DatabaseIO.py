@@ -19,10 +19,29 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            add_item = "INSERT INTO storage (name, amount) VALUES (%s, %s) ON DUPLICATE KEY UPDATE amount = amount + VALUES(amount)"
+            sql = "INSERT INTO storage (name, amount) VALUES (%s, %s) ON DUPLICATE KEY UPDATE amount = amount + VALUES(amount)"
 
             cursor = self.cnx.cursor()
-            cursor.execute(add_item, values)
+            cursor.execute(sql, values)
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print(error)
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+    def updateStorageData(self, values: Tuple[int, int]) -> None:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = "UPDATE storage SET amount = amount + " + str(values[1]) + " WHERE id =" + str(values[0])
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
             self.cnx.commit()
 
         except mysql.connector.Error as error:
@@ -89,10 +108,10 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            add_item = "INSERT INTO orders (table_nr, staff_id, ordered_items) VALUES (%s, %s, %s)"
+            sql = "INSERT INTO orders (table_nr, staff_id, ordered_items) VALUES (%s, %s, %s)"
 
             cursor = self.cnx.cursor()
-            cursor.execute(add_item, (values[0], values[1], json.dumps(values[2])))
+            cursor.execute(sql, (values[0], values[1], json.dumps(values[2])))
             self.cnx.commit()
 
         except mysql.connector.Error as error:
@@ -102,3 +121,5 @@ class DatabaseIO:
                 self.cnx.close()
             if cursor is not None:
                 cursor.close()
+
+        self.retrieveItemFromStorage(values[2])
