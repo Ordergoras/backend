@@ -1,6 +1,7 @@
 from typing import Tuple, List
 import mysql.connector
 import os
+import json
 
 
 class DatabaseIO:
@@ -47,6 +48,7 @@ class DatabaseIO:
 
         except mysql.connector.Error as error:
             print(error)
+            # TODO error handling
             return None
         finally:
             if self.cnx.is_connected():
@@ -81,3 +83,22 @@ class DatabaseIO:
                 cursor.close()
 
         return result
+
+    def insertOrderData(self, values: Tuple[int, int, List[Tuple[int, int]]]) -> None:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            add_item = "INSERT INTO orders (table_nr, staff_id, ordered_items) VALUES (%s, %s, %s)"
+
+            cursor = self.cnx.cursor()
+            cursor.execute(add_item, (values[0], values[1], json.dumps(values[2])))
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print(error)
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
