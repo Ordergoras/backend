@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 import mysql.connector
 import os
 import json
@@ -75,16 +75,16 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
-        return self.getStorageData([item[0] for item in retrievedItems])
+        return self.getStorageItemData([item[0] for item in retrievedItems])
 
-    def getStorageData(self, itemIds: List[int]) -> List[Tuple[str, int]] | None:
+    def getStorageItemData(self, itemIds: List[int]) -> Dict | None:
         cursor = None
         result = []
         try:
             self.establishConnection()
 
             for itemId in itemIds:
-                sql = "SELECT name, amount FROM storage WHERE id = " + str(itemId)
+                sql = "SELECT * FROM storage WHERE id = " + str(itemId)
 
                 cursor = self.cnx.cursor()
                 cursor.execute(sql)
@@ -101,7 +101,34 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
-        return result
+        return {a: (b, c) for a, b, c in result}
+
+    def getStorageFullData(self) -> Dict | None:
+        cursor = None
+        result = []
+        try:
+            self.establishConnection()
+
+            sql = "SELECT * FROM storage"
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
+
+            for row in cursor:
+                result.append(row)
+
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print(error)
+            return None
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        return {a: (b, c) for a, b, c in result}
 
     def insertOrderData(self, values: Tuple[int, int, List[Tuple[int, int]]]) -> None:
         cursor = None
