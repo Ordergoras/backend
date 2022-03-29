@@ -1,6 +1,4 @@
 from flask import Blueprint, request, jsonify
-import re
-
 from database.DatabaseIO import DatabaseIO
 
 storageApi = Blueprint('storageApi', __name__)
@@ -32,7 +30,7 @@ def addNewItem():
         name = request.args['name']
         amount = int(request.args['amount'])
     else:
-        return "Error: No name and amount field provided. Please specify all necessary fields."
+        return "Error: No name or amount field provided. Please specify all necessary fields."
 
     dbio = DatabaseIO()
     dbio.insertStorageData((name, amount))
@@ -46,7 +44,7 @@ def updateItemAmount():
         itemId = int(request.args['itemId'])
         amount = int(request.args['amount'])
     else:
-        return "Error: No itemId and amount field provided. Please specify all necessary fields."
+        return "Error: No itemId or amount field provided. Please specify all necessary fields."
 
     dbio = DatabaseIO()
     dbio.updateStorageData((itemId, amount))
@@ -57,13 +55,24 @@ def updateItemAmount():
 
 @storageApi.route('/retrieveItems', methods=['GET', 'POST'])
 def retrieveItems():
+    """
+    pathVariable 'itemIds' - list of integers seperated by ',', e.g. itemIds=1,2,3
+
+    pathVariable 'amounts' - list of integers seperated by ',', e.g. amounts=4,11,7
+
+    requires both lists to be of equal length
+
+    takes away each amount from the corresponding id in storage (as long as enough items are stored)
+
+    :return: json of dictionary containing all modified tuples
+    """
     if 'itemIds' in request.args and 'amounts' in request.args:
         itemIdsString = request.args['itemIds']
         amountsString = request.args['amounts']
         itemIds = list(int(value) for value in itemIdsString.split(','))
         amounts = list(int(value) for value in amountsString.split(','))
     else:
-        return "Error: No itemIds and amounts provided. Please specify all necessary fields."
+        return "Error: No itemIds or amounts provided. Please specify all necessary fields."
 
     dbio = DatabaseIO()
     dbio.retrieveItemFromStorage(list(zip(itemIds, amounts)))
