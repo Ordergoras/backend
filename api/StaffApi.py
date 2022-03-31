@@ -37,7 +37,7 @@ def setAdminStatus():
     if 'executingStaffId' in request.args and 'staffId' in request.args and 'newStatus' in request.args:
         executingStaffId = int(request.args['executingStaffId'])
         staffId = int(request.args['staffId'])
-        newStatus = True if request.args['newStatus'] == 'True' else False
+        newStatus = True if request.args['newStatus'] == '1' else False
     else:
         return "Error: No executingStaffId, staffId or newStatus field provided. Please specify all necessary fields."
 
