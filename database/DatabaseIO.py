@@ -2,6 +2,7 @@ from typing import Tuple, List, Dict
 import mysql.connector
 import os
 import json
+import time
 
 
 class DatabaseIO:
@@ -177,3 +178,82 @@ class DatabaseIO:
                 cursor.close()
 
         return {result[0]: {'tableNr': result[1], 'staffId': result[2], 'orderedItems': json.loads(result[3])}}
+
+    def insertNewAccount(self, userData: Tuple[str, str]) -> int | None:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = "INSERT INTO staff (name, is_admin, password, salt) VALUES (%s, %s, %s, %s)"
+
+            salt = int(time.time())
+
+            values = (userData[0], False, userData[1], salt)
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql, values)
+            rowId = cursor.lastrowid
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print(error)
+            return None
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        return rowId
+
+    def getAccount(self, staffId: int) -> Dict | None:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = "SELECT * FROM staff WHERE staff_id = " + str(staffId)
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
+            result = cursor.fetchone()
+
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print(error)
+            return None
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        return {result[0]: {'name': result[1], 'isAdmin': result[2]}}
+
+    def setAdminStatus(self, executorId: int, staffId: int, newStatus: bool) -> Dict | None:
+        executorIsAdmin = self.getAccount(executorId)[executorId]['isAdmin']
+
+        if not executorIsAdmin:
+            return {"You can't perform this action": "Restricted access"}
+
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = "UPDATE staff SET is_admin = " + str(newStatus) + " WHERE staff_id = " + str(staffId)
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
+
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print(error)
+            return None
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        return self.getAccount(staffId)
