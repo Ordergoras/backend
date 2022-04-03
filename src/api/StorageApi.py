@@ -1,16 +1,15 @@
 from flask import Blueprint, request, jsonify
-from database.DatabaseIO import DatabaseIO
+from src.database.DatabaseIO import DatabaseIO
+from src.utils.responseUtils import create400Response
 
 storageApi = Blueprint('storageApi', __name__)
 
 
-@storageApi.route('/getItems', methods=['GET'])
+@storageApi.route('/getItems', methods=['PUT'])
 def getItems():
-    if 'itemIds' in request.args:
-        itemIdsString = request.args['itemIds']
-        itemIds = list(int(value) for value in itemIdsString.split(','))
-    else:
-        return "Error: No itemIds field provided. Please specify all necessary fields."
+    itemIds = request.json.get('itemIds')
+    if not itemIds:
+        return create400Response('No itemIds field provided. Please specify all necessary fields.')
 
     dbio = DatabaseIO()
     data = dbio.getStorageItemData(itemIds)
@@ -24,13 +23,13 @@ def getAllItems():
     return jsonify(data)
 
 
-@storageApi.route('/postItem', methods=['GET', 'POST'])
+@storageApi.route('/postItem', methods=['POST'])
 def addNewItem():
     if 'name' in request.args and 'amount' in request.args:
         name = request.args['name']
         amount = int(request.args['amount'])
     else:
-        return "Error: No name or amount field provided. Please specify all necessary fields."
+        return create400Response('No name or amount field provided. Please specify all necessary fields.')
 
     dbio = DatabaseIO()
     dbio.insertStorageData((name, amount))
@@ -38,13 +37,13 @@ def addNewItem():
     return jsonify('Inserted {name} with {amount} units'.format(name=name, amount=amount))
 
 
-@storageApi.route('/updateItemAmount', methods=['GET', 'POST'])
+@storageApi.route('/updateItemAmount', methods=['POST'])
 def updateItemAmount():
     if 'itemId' in request.args and 'amount' in request.args:
         itemId = int(request.args['itemId'])
         amount = int(request.args['amount'])
     else:
-        return "Error: No itemId or amount field provided. Please specify all necessary fields."
+        return create400Response('No itemId or amount field provided. Please specify all necessary fields.')
 
     dbio = DatabaseIO()
     dbio.updateStorageData((itemId, amount))
@@ -53,7 +52,7 @@ def updateItemAmount():
     return jsonify(data)
 
 
-@storageApi.route('/retrieveItems', methods=['GET', 'POST'])
+@storageApi.route('/retrieveItems', methods=['POST'])
 def retrieveItems():
     """
     pathVariable 'itemIds' - list of integers seperated by ',', e.g. itemIds=1,2,3
@@ -72,10 +71,10 @@ def retrieveItems():
         itemIds = list(int(value) for value in itemIdsString.split(','))
         amounts = list(int(value) for value in amountsString.split(','))
     else:
-        return "Error: No itemIds or amounts provided. Please specify all necessary fields."
+        return create400Response('No itemIds or amounts provided. Please specify all necessary fields.')
 
     dbio = DatabaseIO()
-    dbio.retrieveItemFromStorage(list(zip(itemIds, amounts)))
+    dbio.retrieveItemsFromStorage(list(zip(itemIds, amounts)))
     data = dbio.getStorageItemData(itemIds)
 
     return jsonify(data)

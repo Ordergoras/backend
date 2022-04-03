@@ -1,10 +1,11 @@
 from flask import Blueprint, request, jsonify
-from database.DatabaseIO import DatabaseIO
+from src.database.DatabaseIO import DatabaseIO
+from src.utils.responseUtils import create400Response
 
 ordersApi = Blueprint('ordersApi', __name__)
 
 
-@ordersApi.route('/postOrder', methods=['GET', 'POST'])
+@ordersApi.route('/postOrder', methods=['POST'])
 def addNewOrder():
     """
     example call: http://localhost:5000/orders/postOrder?tableNr=12&staffId=10&orderedItems=1,4;2,7;3,9
@@ -20,7 +21,7 @@ def addNewOrder():
             values = tupleS.split(',')
             orderedItems.append((int(values[0]), int(values[1])))
     else:
-        return "Error: No tableNr, staffId or orderedItems field provided. Please specify all necessary fields."
+        return create400Response('No tableNr, staffId or orderedItems field provided. Please specify all necessary fields.')
 
     dbio = DatabaseIO()
     rowId = dbio.insertOrderData((tableNr, staffId, orderedItems))
@@ -34,7 +35,7 @@ def getOrder():
     if 'orderId' in request.args:
         orderId = int(request.args['orderId'])
     else:
-        return "Error: No orderId field provided. Please specify all necessary fields."
+        return create400Response('No orderId field provided. Please specify all necessary fields.')
 
     dbio = DatabaseIO()
     data = dbio.getOrder(orderId)
