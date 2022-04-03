@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from src.database.DatabaseIO import DatabaseIO
 from src.utils.authUtils import validateUserInput, generateSalt, generateHash, validateUser, tokenRequired, adminRequired, generateUuid
-from src.utils.responseUtils import create400Response, create401Response, create409Response
+from src.utils.responseUtils import create400Response, create401Response, create409Response, create200Response
 
 staffApi = Blueprint('staffApi', __name__)
 
@@ -77,5 +77,4 @@ def login():
 @staffApi.route('/logout', methods=['POST'])
 @tokenRequired
 def logout(staff):
-    # TODO
-    return jsonify(staff)
+    return create200Response('Successfully logged out user {name}'.format(name=staff['name']))
