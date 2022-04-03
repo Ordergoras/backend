@@ -10,7 +10,7 @@ staffApi = Blueprint('staffApi', __name__)
 def registerStaff():
     name = request.json.get('name')
     password = request.json.get('password')
-    if not (name and password):
+    if name is None or password is None:
         return create400Response('No name or password field provided. Please specify all necessary fields.')
 
     if not validateUserInput('auth', name=name, password=password):
@@ -46,11 +46,11 @@ def getStaff():
 
 @staffApi.route('/setAdmin', methods=['POST'])
 @adminRequired
-def setAdminStatus():
-    if 'staffId' in request.args and 'newStatus' in request.args:
-        staffId = request.args['staffId']
-        newStatus = True if request.args['newStatus'] == '1' else False
-    else:
+def setAdminStatus(__):
+    staffId = request.json.get('staffId')
+    newStatus = request.json.get('newStatus')
+
+    if staffId is None or newStatus is None:
         return create400Response('No staffId or newStatus field provided. Please specify all necessary fields.')
 
     dbio = DatabaseIO()
@@ -63,7 +63,8 @@ def setAdminStatus():
 def login():
     name = request.json.get('name')
     password = request.json.get('password')
-    if not (name and password):
+
+    if name is None or password is None:
         return create400Response('No name or password field provided. Please specify all necessary fields.')
 
     userToken = validateUser(name, password)
