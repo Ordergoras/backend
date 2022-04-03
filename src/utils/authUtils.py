@@ -5,9 +5,9 @@ from typing import Dict
 from uuid import uuid4
 from flask import request, Response
 import jwt
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from src.database.DatabaseIO import DatabaseIO
-from src.utils.responseUtils import create401Response
+from src.utils.responseUtils import create401Response, create400Response
 
 
 def validateUserInput(input_type: str, **kwargs) -> bool:
@@ -38,15 +38,24 @@ def generateHash(password: str, salt: str) -> str:
 
 
 def generateJwtToken(content: Dict) -> str:
-    # TODO fix expiry date
-    dt = datetime.now(timezone.utc) + timedelta(seconds=20)
-    token = jwt.encode(content, os.getenv('jwtSecretKey'), algorithm='HS256', headers={'exp': dt.timestamp()})
+    dt = (datetime.now() + timedelta(hours=8)).timestamp()
+    content['exp'] = dt
+    token = jwt.encode(content, os.getenv('jwtSecretKey'), algorithm='HS256')
     return token
 
 
-def decodeJwtToken(token: str) -> str:
-    staffId = jwt.decode(token, os.getenv('jwtSecretKey'), algorithms='HS256')['staffId']
-    return staffId
+def decodeJwtToken(token: str) -> str | Response:
+    try:
+        decodedToken = jwt.decode(token, os.getenv('jwtSecretKey'), algorithms='HS256', options={'require_exp': True})
+    except jwt.ExpiredSignatureError as error:
+        print('authUtils.validateToken.1', error)
+        # TODO initiate new login
+        return create401Response('Token is expired')
+    except jwt.InvalidTokenError as error:
+        print('authUtils.validateToken.2', error)
+        return create400Response('Token is invalid')
+
+    return decodedToken['staffId']
 
 
 def validateUser(name: str, password: str) -> str | None:
@@ -69,17 +78,6 @@ def validateUser(name: str, password: str) -> str | None:
         return None
 
 
-def validateToken(token: str) -> Dict | None:
-    try:
-        staffId = decodeJwtToken(token)
-    except (jwt.InvalidTokenError, jwt.ExpiredSignatureError) as error:
-        print('authUtils.validateToken', error)
-        return None
-
-    dbio = DatabaseIO()
-    return dbio.getAccountById(staffId)
-
-
 def checkAuthHeader(adminMode: bool) -> Response | dict:
     token = None
     if 'authorization' in request.headers:
@@ -88,10 +86,16 @@ def checkAuthHeader(adminMode: bool) -> Response | dict:
     if not token:
         return create401Response('Authorization header is missing.')
 
-    staff = validateToken(token)
+    staffId = decodeJwtToken(token)
 
-    if staff is None or (adminMode and not staff['isAdmin']):
-        return create401Response('Token is invalid.')
+    if isinstance(staffId, Response):
+        return staffId
+
+    dbio = DatabaseIO()
+    staff = dbio.getAccountById(staffId)
+
+    if adminMode and not staff['isAdmin']:
+        return create401Response('Not authorized to perform this action.')
 
     return staff
 
