@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify
 from src.database.DatabaseIO import DatabaseIO
 from src.utils.authUtils import generateUuid
 from src.utils.responseUtils import create400Response, create200Response
+from src.utils.types import ItemGroup
 
 storageApi = Blueprint('storageApi', __name__)
 
@@ -29,13 +30,14 @@ def getAllItems():
 def addNewItem():
     name: str = request.json.get('name')
     amount: int = request.json.get('amount')
-    if name is None or amount is None:
+    group: ItemGroup = request.json.get('group')
+    if name is None or amount is None or group is None:
         return create400Response('No name or amount field provided. Please specify all necessary fields.')
 
     itemId = generateUuid()
 
     dbio = DatabaseIO()
-    hasInserted = dbio.insertStorageData(itemId, name, amount)
+    hasInserted = dbio.insertStorageData(itemId, name, amount, group)
 
     if hasInserted:
         return create200Response('Inserted {name} with {amount} units'.format(name=name, amount=amount))

@@ -2,6 +2,7 @@ from typing import List, Dict, Union
 import mysql.connector
 import os
 import json
+from src.utils.types import ItemGroup
 
 
 class DatabaseIO:
@@ -14,15 +15,15 @@ class DatabaseIO:
         except mysql.connector.Error as error:
             print('DatabaseIO.establishConnection', error)
 
-    def insertStorageData(self, itemId: str, name: str, amount: int) -> bool:
+    def insertStorageData(self, itemId: str, name: str, amount: int, group: ItemGroup) -> bool:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = "INSERT INTO storage (id, name, amount) VALUES (%s, %s, %s)"
+            sql = "INSERT INTO storage (id, name, amount, `group`) VALUES (%s, %s, %s, %s)"
 
             cursor = self.cnx.cursor()
-            cursor.execute(sql, (itemId, name, amount))
+            cursor.execute(sql, (itemId, name, amount, group))
             self.cnx.commit()
 
         except mysql.connector.Error as error:
@@ -106,7 +107,7 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
-        return {a: {'name': b, 'amount': c} for a, b, c in result}
+        return {a: {'name': b, 'amount': c, 'group': d} for a, b, c, d in result}
 
     def getStorageFullData(self) -> Dict[str, Dict[str, int]] | None:
         cursor = None
@@ -133,7 +134,7 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
-        return {a: {'name': b, 'amount': c} for a, b, c in result}
+        return {a: {'name': b, 'amount': c, 'group': d} for a, b, c, d in result}
 
     def insertOrderData(self, orderId: str, tableId: int, staffId: str, orderedItems: Dict[str, int], timestamp: float) -> bool:
         cursor = None
