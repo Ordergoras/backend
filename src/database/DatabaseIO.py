@@ -144,7 +144,7 @@ class DatabaseIO:
             sql = "INSERT INTO orders (order_id, table_nr, staff_id, ordered_items, timestamp) VALUES (%s, %s, %s, %s, %s)"
 
             cursor = self.cnx.cursor()
-            cursor.execute(sql, (orderId, tableId, staffId, orderedItems, timestamp))
+            cursor.execute(sql, (orderId, tableId, staffId, json.dumps(orderedItems), timestamp))
             self.cnx.commit()
 
         except mysql.connector.Error as error:
@@ -159,7 +159,7 @@ class DatabaseIO:
         self.retrieveItemsFromStorage(orderedItems)
         return True
 
-    def getOrder(self, orderId: str) -> Dict | None:
+    def getOrder(self, orderId: str) -> Dict[str, Union[str, int, Dict[str, int]]] | None:
         cursor = None
         try:
             self.establishConnection()
