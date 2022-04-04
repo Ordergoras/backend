@@ -48,12 +48,12 @@ def addNewItem():
 @storageApi.route('/updateItemAmount', methods=['POST'])
 def updateItemAmount():
     itemId: str = request.json.get('itemId')
-    amount: int = request.json.get('amount')
-    if itemId is None or amount is None:
-        return create400Response('No itemId or amount field provided. Please specify all necessary fields.')
+    amountChange: int = request.json.get('amountChange')
+    if itemId is None or amountChange is None:
+        return create400Response('No itemId or amountChange field provided. Please specify all necessary fields.')
 
     dbio = DatabaseIO()
-    dbio.updateStorageData(itemId, amount)
+    dbio.updateStorageData(itemId, amountChange)
     data = dbio.getStorageItemData([itemId])
 
     return jsonify(data)
