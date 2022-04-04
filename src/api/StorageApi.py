@@ -2,7 +2,7 @@ from typing import List, Dict
 from flask import Blueprint, request, jsonify
 from src.database.DatabaseIO import DatabaseIO
 from src.utils.authUtils import generateUuid
-from src.utils.responseUtils import create400Response
+from src.utils.responseUtils import create400Response, create200Response
 
 storageApi = Blueprint('storageApi', __name__)
 
@@ -35,9 +35,12 @@ def addNewItem():
     itemId = generateUuid()
 
     dbio = DatabaseIO()
-    dbio.insertStorageData(itemId, name, amount)
+    hasInserted = dbio.insertStorageData(itemId, name, amount)
 
-    return jsonify('Inserted {name} with {amount} units'.format(name=name, amount=amount))
+    if hasInserted:
+        return create200Response('Inserted {name} with {amount} units'.format(name=name, amount=amount))
+    else:
+        return create400Response('Couldn\'t insert item')
 
 
 @storageApi.route('/updateItemAmount', methods=['POST'])
