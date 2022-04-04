@@ -49,7 +49,6 @@ def decodeJwtToken(token: str) -> str | Response:
         decodedToken = jwt.decode(token, os.getenv('jwtSecretKey'), algorithms='HS256', options={'require_exp': True})
     except jwt.ExpiredSignatureError as error:
         print('authUtils.validateToken.1', error)
-        # TODO initiate new login
         return create401Response('Token is expired')
     except jwt.InvalidTokenError as error:
         print('authUtils.validateToken.2', error)
