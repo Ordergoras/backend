@@ -37,12 +37,12 @@ class DatabaseIO:
 
         return True
 
-    def updateStorageData(self, itemId: str, addedAmount: int) -> bool:
+    def updateStorageData(self, itemId: str, amountChange: int) -> bool:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = "UPDATE storage SET amount = amount + " + str(addedAmount) + " WHERE id = '" + itemId + "'"
+            sql = "UPDATE storage SET amount = amount + " + str(amountChange) + " WHERE id = '" + itemId + "'"
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
@@ -64,7 +64,7 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            for key, value in retrievedItems:
+            for key, value in retrievedItems.items():
                 sql = "UPDATE storage SET amount = amount - " + str(value) + " WHERE id = '" + key + "'"
 
                 cursor = self.cnx.cursor()
@@ -81,7 +81,7 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
-        return self.getStorageItemData([key for key in retrievedItems])
+        return self.getStorageItemData([key for key in retrievedItems.keys()])
 
     def getStorageItemData(self, itemIds: List[str]) -> Dict[str, Dict[str, int]] | None:
         cursor = None
