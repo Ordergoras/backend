@@ -1,39 +1,37 @@
+from datetime import datetime
+from typing import Dict
 from flask import Blueprint, request, jsonify
 from src.database.DatabaseIO import DatabaseIO
-from src.utils.responseUtils import create400Response
+from src.utils.authUtils import generateUuid
+from src.utils.responseUtils import create400Response, create200Response
 
 ordersApi = Blueprint('ordersApi', __name__)
 
 
 @ordersApi.route('/postOrder', methods=['POST'])
 def addNewOrder():
-    """
-    example call: http://localhost:5000/orders/postOrder?tableNr=12&staffId=10&orderedItems=1,4;2,7;3,9
-    :return:
-    """
-    if 'tableNr' in request.args and 'staffId' in request.args and 'orderedItems' in request.args:
-        tableNr = int(request.args['tableNr'])
-        staffId = int(request.args['staffId'])
-        string = request.args['orderedItems']
-        tupleStrings = string.split(';')
-        orderedItems = []
-        for tupleS in tupleStrings:
-            values = tupleS.split(',')
-            orderedItems.append((int(values[0]), int(values[1])))
-    else:
+    tableNr: int = request.json.get('tableNr')
+    staffId: str = request.json.get('staffId')
+    orderedItems: Dict[str, int] = request.json.get('orderedItems')
+    if tableNr is None or staffId is None or orderedItems is None:
         return create400Response('No tableNr, staffId or orderedItems field provided. Please specify all necessary fields.')
 
-    dbio = DatabaseIO()
-    rowId = dbio.insertOrderData((tableNr, staffId, orderedItems))
-    data = dbio.getOrder(rowId)
+    orderId = generateUuid()
+    timestamp = datetime.now().timestamp()
 
-    return jsonify(data)
+    dbio = DatabaseIO()
+    hasInserted = dbio.insertOrderData(orderId, tableNr, staffId, orderedItems, timestamp)
+
+    if hasInserted:
+        return create200Response('Created order {orderId}'.format(orderId=orderId))
+    else:
+        return create400Response('Couldn\'t insert order')
 
 
 @ordersApi.route('/getOrder', methods=['GET'])
 def getOrder():
     if 'orderId' in request.args:
-        orderId = int(request.args['orderId'])
+        orderId: str = request.args['orderId']
     else:
         return create400Response('No orderId field provided. Please specify all necessary fields.')
 

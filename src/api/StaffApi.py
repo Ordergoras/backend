@@ -8,8 +8,8 @@ staffApi = Blueprint('staffApi', __name__)
 
 @staffApi.route('/registerStaff', methods=['POST'])
 def registerStaff():
-    name = request.json.get('name')
-    password = request.json.get('password')
+    name: str = request.json.get('name')
+    password: str = request.json.get('password')
     if name is None or password is None:
         return create400Response('No name or password field provided. Please specify all necessary fields.')
 
@@ -34,7 +34,7 @@ def registerStaff():
 @staffApi.route('/getStaff', methods=['GET'])
 def getStaff():
     if 'staffId' in request.args:
-        staffId = request.args['staffId']
+        staffId: str = request.args['staffId']
     else:
         return create400Response('No staffId field provided. Please specify all necessary fields.')
 
@@ -47,8 +47,8 @@ def getStaff():
 @staffApi.route('/setAdmin', methods=['POST'])
 @adminRequired
 def setAdminStatus(__):
-    staffId = request.json.get('staffId')
-    newStatus = request.json.get('newStatus')
+    staffId: str = request.json.get('staffId')
+    newStatus: bool = request.json.get('newStatus')
 
     if staffId is None or newStatus is None:
         return create400Response('No staffId or newStatus field provided. Please specify all necessary fields.')
@@ -61,8 +61,8 @@ def setAdminStatus(__):
 
 @staffApi.route('/login', methods=['POST'])
 def login():
-    name = request.json.get('name')
-    password = request.json.get('password')
+    name: str = request.json.get('name')
+    password: str = request.json.get('password')
 
     if name is None or password is None:
         return create400Response('No name or password field provided. Please specify all necessary fields.')

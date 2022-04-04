@@ -1,4 +1,4 @@
-from typing import Tuple, List, Dict
+from typing import List, Dict
 import mysql.connector
 import os
 import json
@@ -14,31 +14,34 @@ class DatabaseIO:
         except mysql.connector.Error as error:
             print('DatabaseIO.establishConnection', error)
 
-    def insertStorageData(self, values: Tuple[str, int]) -> None:
+    def insertStorageData(self, itemId: str, name: str, amount: int) -> bool:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = "INSERT INTO storage (name, amount) VALUES (%s, %s) ON DUPLICATE KEY UPDATE amount = amount + VALUES(amount)"
+            sql = "INSERT INTO storage (id, name, amount) VALUES (%s, %s, %s)"
 
             cursor = self.cnx.cursor()
-            cursor.execute(sql, values)
+            cursor.execute(sql, (itemId, name, amount))
             self.cnx.commit()
 
         except mysql.connector.Error as error:
             print('DatabaseIO.insertStorageData', error)
+            return False
         finally:
             if self.cnx.is_connected():
                 self.cnx.close()
             if cursor is not None:
                 cursor.close()
 
-    def updateStorageData(self, values: Tuple[int, int]) -> None:
+        return True
+
+    def updateStorageData(self, itemId: str, addedAmount: int) -> bool:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = "UPDATE storage SET amount = amount + " + str(values[1]) + " WHERE id = '" + str(values[0]) + "'"
+            sql = "UPDATE storage SET amount = amount + " + str(addedAmount) + " WHERE id = '" + itemId + "'"
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
@@ -46,19 +49,22 @@ class DatabaseIO:
 
         except mysql.connector.Error as error:
             print('DatabaseIO.updateStorageData', error)
+            return False
         finally:
             if self.cnx.is_connected():
                 self.cnx.close()
             if cursor is not None:
                 cursor.close()
 
-    def retrieveItemsFromStorage(self, retrievedItems: List[Tuple[int, int]]) -> List[Tuple[str, int]] | None:
+        return True
+
+    def retrieveItemsFromStorage(self, retrievedItems: Dict[str, int]) -> Dict[str, Dict[str, int]] | None:
         cursor = None
         try:
             self.establishConnection()
 
-            for itemTuple in retrievedItems:
-                sql = "UPDATE storage SET amount = amount - " + str(itemTuple[1]) + " WHERE id = '" + str(itemTuple[0]) + "'"
+            for key, value in retrievedItems:
+                sql = "UPDATE storage SET amount = amount - " + str(value) + " WHERE id = '" + key + "'"
 
                 cursor = self.cnx.cursor()
                 cursor.execute(sql)
@@ -67,7 +73,6 @@ class DatabaseIO:
 
         except mysql.connector.Error as error:
             print('DatabaseIO.retrieveItemsFromStorage', error)
-            # TODO error handling
             return None
         finally:
             if self.cnx.is_connected():
@@ -75,16 +80,16 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
-        return self.getStorageItemData([item[0] for item in retrievedItems])
+        return self.getStorageItemData([key for key in retrievedItems])
 
-    def getStorageItemData(self, itemIds: List[int]) -> Dict | None:
+    def getStorageItemData(self, itemIds: List[str]) -> Dict[str, Dict[str, int]] | None:
         cursor = None
         result = []
         try:
             self.establishConnection()
 
             for itemId in itemIds:
-                sql = "SELECT * FROM storage WHERE id = '" + str(itemId) + "'"
+                sql = "SELECT * FROM storage WHERE id = '" + itemId + "'"
 
                 cursor = self.cnx.cursor()
                 cursor.execute(sql)
@@ -103,7 +108,7 @@ class DatabaseIO:
 
         return {a: {'name': b, 'amount': c} for a, b, c in result}
 
-    def getStorageFullData(self) -> Dict | None:
+    def getStorageFullData(self) -> Dict[str, Dict[str, int]] | None:
         cursor = None
         result = []
         try:
@@ -130,31 +135,30 @@ class DatabaseIO:
 
         return {a: {'name': b, 'amount': c} for a, b, c in result}
 
-    def insertOrderData(self, values: Tuple[int, int, List[Tuple[int, int]]]) -> int | None:
+    def insertOrderData(self, orderId: str, tableId: int, staffId: str, orderedItems: Dict[str, int], timestamp: float) -> bool:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = "INSERT INTO orders (table_nr, staff_id, ordered_items) VALUES (%s, %s, %s)"
+            sql = "INSERT INTO orders (order_id, table_nr, staff_id, ordered_items, timestamp) VALUES (%s, %s, %s, %s, %s)"
 
             cursor = self.cnx.cursor()
-            cursor.execute(sql, (values[0], values[1], json.dumps(values[2])))
-            rowId = cursor.lastrowid
+            cursor.execute(sql, (orderId, tableId, staffId, orderedItems, timestamp))
             self.cnx.commit()
 
         except mysql.connector.Error as error:
             print('DatabaseIO.insertOrderData', error)
-            return None
+            return False
         finally:
             if self.cnx.is_connected():
                 self.cnx.close()
             if cursor is not None:
                 cursor.close()
 
-        self.retrieveItemsFromStorage(values[2])
-        return rowId
+        self.retrieveItemsFromStorage(orderedItems)
+        return True
 
-    def getOrder(self, orderId: int) -> Dict | None:
+    def getOrder(self, orderId: str) -> Dict | None:
         cursor = None
         try:
             self.establishConnection()
@@ -202,7 +206,7 @@ class DatabaseIO:
 
         return True
 
-    def getAccountById(self, staffId: str) -> Dict | None:
+    def getAccountById(self, staffId: str) -> Dict[str, str, bool] | None:
         cursor = None
         try:
             self.establishConnection()
@@ -224,9 +228,9 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
-        return {'staffId': result[0], 'name': result[1], 'isAdmin': result[2]}
+        return {'staffId': result[0], 'name': result[1], 'isAdmin': bool(result[2])}
 
-    def getAccountByNameWithAuthData(self, name: str) -> Dict | None:
+    def getAccountByNameWithAuthData(self, name: str) -> Dict[str, str, bool, str, str] | None:
         cursor = None
         try:
             self.establishConnection()
@@ -248,9 +252,9 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
-        return {'staffId': result[0], 'name': result[1], 'isAdmin': result[2], 'password': result[3], 'salt': result[4]}
+        return {'staffId': result[0], 'name': result[1], 'isAdmin': bool(result[2]), 'password': result[3], 'salt': result[4]}
 
-    def setAdminStatus(self, staffId: str, newStatus: bool) -> Dict | None:
+    def setAdminStatus(self, staffId: str, newStatus: bool) -> Dict[str, str, bool] | None:
         cursor = None
         try:
             self.establishConnection()
