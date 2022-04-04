@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Union
 import mysql.connector
 import os
 import json
@@ -206,7 +206,7 @@ class DatabaseIO:
 
         return True
 
-    def getAccountById(self, staffId: str) -> Dict[str, str, bool] | None:
+    def getAccountById(self, staffId: str) -> Dict[str, Union[str, bool]] | None:
         cursor = None
         try:
             self.establishConnection()
@@ -230,7 +230,7 @@ class DatabaseIO:
 
         return {'staffId': result[0], 'name': result[1], 'isAdmin': bool(result[2])}
 
-    def getAccountByNameWithAuthData(self, name: str) -> Dict[str, str, bool, str, str] | None:
+    def getAccountByNameWithAuthData(self, name: str) -> Dict[str, Union[str, bool]] | None:
         cursor = None
         try:
             self.establishConnection()
@@ -254,7 +254,7 @@ class DatabaseIO:
 
         return {'staffId': result[0], 'name': result[1], 'isAdmin': bool(result[2]), 'password': result[3], 'salt': result[4]}
 
-    def setAdminStatus(self, staffId: str, newStatus: bool) -> Dict[str, str, bool] | None:
+    def setAdminStatus(self, staffId: str, newStatus: bool) -> Dict[str, Union[str, bool]] | None:
         cursor = None
         try:
             self.establishConnection()
