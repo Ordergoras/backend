@@ -159,12 +159,12 @@ class DatabaseIO:
         self.retrieveItemsFromStorage(orderedItems)
         return True
 
-    def getOrder(self, orderId: str) -> Dict[str, Union[str, int, Dict[str, int]]] | None:
+    def getOrder(self, orderId: str) -> Dict[str, Union[str, int, Dict[str, int], float]] | None:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = "SELECT * FROM orders WHERE order_id = '" + str(orderId) + "'"
+            sql = "SELECT * FROM orders WHERE order_id = '" + orderId + "'"
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
@@ -181,7 +181,14 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
-        return {'orderId': result[0], 'tableNr': result[1], 'staffId': result[2], 'orderedItems': json.loads(result[3])}
+        return {
+            'orderId': result[0],
+            'tableNr': result[1],
+            'staffId': result[2],
+            'orderedItems': json.loads(result[3]),
+            'timestamp': result[4],
+            'completed': result[5]
+        }
 
     def insertNewAccount(self, staffId: str,  name: str, password: str, salt: str) -> bool:
         cursor = None
@@ -277,3 +284,71 @@ class DatabaseIO:
                 cursor.close()
 
         return self.getAccountById(staffId)
+
+    def insertNewSession(self, sessionId: str, staffId: str) -> bool:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = "INSERT INTO sessions (session_id, staff_id, is_valid) VALUES (%s, %s, %s)"
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql, (sessionId, staffId, True))
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print('DatabaseIO.insertStorageData', error)
+            return False
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        return True
+
+    def invalidateSession(self, sessionId: str) -> bool:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = "UPDATE sessions SET is_valid = 0 WHERE session_id = '" + sessionId + "'"
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print('DatabaseIO.insertStorageData', error)
+            return False
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        return True
+
+    def getSession(self, sessionId: str) -> Dict[str, Union[str, bool]] | None:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = "SELECT * FROM sessions WHERE session_id = '" + sessionId + "'"
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
+            result = cursor.fetchone()
+
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print('DatabaseIO.getOrder', error)
+            return None
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        return {'sessionId': result[0], 'staffId': result[1], 'isValid': result[2]}
