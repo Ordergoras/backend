@@ -1,38 +1,41 @@
 from typing import List, Dict
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request
 from src.database.DatabaseIO import DatabaseIO
-from src.utils.authUtils import generateUuid
-from src.utils.responseUtils import create400Response, create200Response
+from src.utils.authUtils import generateUuid, tokenRequired, adminRequired
+from src.utils.responseUtils import create400Response, create200Response, create200ResponseData
 from src.utils.types import ItemGroup
 
 storageApi = Blueprint('storageApi', __name__)
 
 
 @storageApi.route('/getItems', methods=['PUT'])
-def getItems():
+@tokenRequired
+def getItems(_, newAccessToken):
     itemIds: List[str] = request.json.get('itemIds')
     if itemIds is None:
-        return create400Response('No itemIds field provided. Please specify all necessary fields.')
+        return create400Response('No itemIds field provided. Please specify all necessary fields.', newAccessToken)
 
     dbio = DatabaseIO()
     data = dbio.getStorageItemData(itemIds)
-    return jsonify(data)
+    return create200ResponseData(data, newAccessToken)
 
 
 @storageApi.route('/getAllItems', methods=['GET'])
-def getAllItems():
+@tokenRequired
+def getAllItems(_, newAccessToken):
     dbio = DatabaseIO()
     data = dbio.getStorageFullData()
-    return jsonify(data)
+    return create200ResponseData(data, newAccessToken)
 
 
 @storageApi.route('/postItem', methods=['POST'])
-def addNewItem():
+@adminRequired
+def addNewItem(_, newAccessToken):
     name: str = request.json.get('name')
     amount: int = request.json.get('amount')
     group: ItemGroup = request.json.get('group')
     if name is None or amount is None or group is None:
-        return create400Response('No name or amount field provided. Please specify all necessary fields.')
+        return create400Response('No name or amount field provided. Please specify all necessary fields.', newAccessToken)
 
     itemId = generateUuid()
 
@@ -40,33 +43,35 @@ def addNewItem():
     hasInserted = dbio.insertStorageData(itemId, name, amount, group)
 
     if hasInserted:
-        return create200Response('Inserted {name} with {amount} units'.format(name=name, amount=amount))
+        return create200Response('Inserted {name} with {amount} units'.format(name=name, amount=amount), newAccessToken)
     else:
-        return create400Response('Couldn\'t insert item')
+        return create400Response('Couldn\'t insert item', newAccessToken)
 
 
 @storageApi.route('/updateItemAmount', methods=['POST'])
-def updateItemAmount():
+@adminRequired
+def updateItemAmount(_, newAccessToken):
     itemId: str = request.json.get('itemId')
     amountChange: int = request.json.get('amountChange')
     if itemId is None or amountChange is None:
-        return create400Response('No itemId or amountChange field provided. Please specify all necessary fields.')
+        return create400Response('No itemId or amountChange field provided. Please specify all necessary fields.', newAccessToken)
 
     dbio = DatabaseIO()
     dbio.updateStorageData(itemId, amountChange)
     data = dbio.getStorageItemData([itemId])
 
-    return jsonify(data)
+    return create200ResponseData(data, newAccessToken)
 
 
 @storageApi.route('/retrieveItems', methods=['POST'])
-def retrieveItems():
+@tokenRequired
+def retrieveItems(_, newAccessToken):
     retrievedItems: Dict[str, int] = request.json.get('retrievedItems')
     if retrievedItems is None:
-        return create400Response('No retrievedItems field provided. Please specify all necessary fields.')
+        return create400Response('No retrievedItems field provided. Please specify all necessary fields.', newAccessToken)
 
     dbio = DatabaseIO()
     dbio.retrieveItemsFromStorage(retrievedItems)
     data = dbio.getStorageItemData([key for key in retrievedItems])
 
-    return jsonify(data)
+    return create200ResponseData(data, newAccessToken)

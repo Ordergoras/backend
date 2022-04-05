@@ -38,7 +38,7 @@ def getStaff(_, newAccessToken):
     if 'staffId' in request.args:
         staffId: str = request.args['staffId']
     else:
-        return create400Response('No staffId field provided. Please specify all necessary fields.')
+        return create400Response('No staffId field provided. Please specify all necessary fields.', newAccessToken)
 
     dbio = DatabaseIO()
     data = dbio.getAccountById(staffId)
@@ -53,7 +53,7 @@ def setAdminStatus(_, newAccessToken):
     newStatus: bool = request.json.get('newStatus')
 
     if staffId is None or newStatus is None:
-        return create400Response('No staffId or newStatus field provided. Please specify all necessary fields.')
+        return create400Response('No staffId or newStatus field provided. Please specify all necessary fields.', newAccessToken)
 
     dbio = DatabaseIO()
     data = dbio.setAdminStatus(staffId, newStatus)
