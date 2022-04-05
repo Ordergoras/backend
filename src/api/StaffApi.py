@@ -1,8 +1,7 @@
 from flask import Blueprint, request, jsonify
 from src.database.DatabaseIO import DatabaseIO
-from src.utils.authUtils import validateUserInput, generateSalt, generateHash, validateUser, adminRequired, generateUuid, \
-    decodePayloadWithoutExpiration
-from src.utils.responseUtils import create400Response, create401Response, create409Response, create200Response
+from src.utils.authUtils import validateUserInput, generateSalt, generateHash, validateUser, adminRequired, generateUuid, decodeJwtToken
+from src.utils.responseUtils import create400Response, create401Response, create409Response, create200Response, create200ResponseData
 from src.utils.globals import ACCESS_TOKEN_LIFETIME, SESSION_TOKEN_LIFETIME
 
 staffApi = Blueprint('staffApi', __name__)
@@ -30,7 +29,7 @@ def registerStaff():
 
     data = dbio.getAccountById(staffId)
 
-    return jsonify(data)
+    return create200ResponseData(data)
 
 
 @staffApi.route('/getStaff', methods=['GET'])
@@ -44,10 +43,7 @@ def getStaff(_, newAccessToken):
     dbio = DatabaseIO()
     data = dbio.getAccountById(staffId)
 
-    response = jsonify(data)
-    if newAccessToken is not None:
-        response.set_cookie('accessToken', newAccessToken, max_age=ACCESS_TOKEN_LIFETIME, httponly=True)
-    return response
+    return create200ResponseData(data, newAccessToken)
 
 
 @staffApi.route('/setAdmin', methods=['POST'])
@@ -62,10 +58,7 @@ def setAdminStatus(_, newAccessToken):
     dbio = DatabaseIO()
     data = dbio.setAdminStatus(staffId, newStatus)
 
-    response = jsonify(data)
-    if newAccessToken is not None:
-        response.set_cookie('accessToken', newAccessToken, max_age=ACCESS_TOKEN_LIFETIME, httponly=True)
-    return response
+    return create200ResponseData(data, newAccessToken)
 
 
 @staffApi.route('/login', methods=['POST'])
@@ -90,7 +83,7 @@ def login():
 @staffApi.route('/logout', methods=['POST'])
 def logout():
     if request.cookies['sessionToken']:
-        payload = decodePayloadWithoutExpiration(request.cookies['sessionToken'])
+        payload = decodeJwtToken(request.cookies['sessionToken'])
         if payload:
             dbio = DatabaseIO()
             dbio.invalidateSession(payload['sessionId'])
