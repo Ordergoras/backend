@@ -58,16 +58,6 @@ def decodeJwtToken(token: str) -> Dict[str, str] | Response | None:
     return decodedToken
 
 
-def decodePayloadWithoutExpiration(token: str) -> Dict | None:
-    try:
-        decodedToken = jwt.decode(token, os.getenv('jwtSecretKey'), algorithms='HS256', options={'verify_exp': False})
-    except jwt.InvalidTokenError as error:
-        print('authUtils.decodePayloadWithoutExpiration.2', error)
-        return None
-
-    return decodedToken
-
-
 def createNewUserSession(sessionId: str, staffId: str) -> None:
     dbio = DatabaseIO()
     dbio.insertNewSession(sessionId, staffId)
