@@ -5,9 +5,12 @@ from typing import Dict
 from uuid import uuid4
 from flask import request, Response
 import jwt
+import base64
+import json
 from datetime import datetime, timedelta
 from src.database.DatabaseIO import DatabaseIO
 from src.utils.responseUtils import create401Response, create400Response
+from src.utils.globals import ACCESS_TOKEN_LIFETIME, SESSION_TOKEN_LIFETIME
 
 
 def validateUserInput(input_type: str, **kwargs) -> bool:
@@ -37,27 +40,48 @@ def generateHash(password: str, salt: str) -> str:
     return password_hash.hex()
 
 
-def generateJwtToken(content: Dict) -> str:
-    dt = (datetime.now() + timedelta(hours=8)).timestamp()
+def generateJwtToken(content: Dict, lifetime: int) -> str:
+    dt = (datetime.now() + timedelta(seconds=lifetime)).timestamp()
     content['exp'] = dt
     token = jwt.encode(content, os.getenv('jwtSecretKey'), algorithm='HS256')
     return token
 
 
-def decodeJwtToken(token: str) -> str | Response:
+def decodeJwtToken(token: str) -> Dict[str, str] | Response | None:
     try:
         decodedToken = jwt.decode(token, os.getenv('jwtSecretKey'), algorithms='HS256', options={'require_exp': True})
     except jwt.ExpiredSignatureError as error:
-        print('authUtils.validateToken.1', error)
-        return create401Response('Token is expired')
+        print('authUtils.decodeJwtToken.1', error)
+        return None
     except jwt.InvalidTokenError as error:
-        print('authUtils.validateToken.2', error)
+        print('authUtils.decodeJwtToken.2', error)
         return create400Response('Token is invalid')
 
-    return decodedToken['staffId']
+    return decodedToken
 
 
-def validateUser(name: str, password: str) -> str | None:
+def decodePayloadWithoutExpiration(token: str) -> Dict | None:
+    try:
+        decodedToken = jwt.decode(token, os.getenv('jwtSecretKey'), algorithms='HS256', options={'verify_exp': False})
+    except jwt.InvalidTokenError as error:
+        print('authUtils.decodePayloadWithoutExpiration.2', error)
+        return None
+
+    return decodedToken
+
+
+def createNewUserSession(sessionId: str, staffId: str) -> None:
+    dbio = DatabaseIO()
+    dbio.insertNewSession(sessionId, staffId)
+
+
+def validateSession(sessionId: str) -> bool:
+    dbio = DatabaseIO()
+    session = dbio.getSession(sessionId)
+    return session['isValid']
+
+
+def validateUser(name: str, password: str) -> Dict[str, str] | None:
     dbio = DatabaseIO()
     currentUser = dbio.getAccountByNameWithAuthData(name)
 
@@ -65,11 +89,14 @@ def validateUser(name: str, password: str) -> str | None:
         savedHash = currentUser['password']
         salt = currentUser['salt']
         passwordHash = generateHash(password, salt)
+        sessionId = generateUuid()
 
         if passwordHash == savedHash:
             staffId = currentUser['staffId']
-            jwtToken = generateJwtToken({'staffId': staffId})
-            return jwtToken
+            accessToken = generateJwtToken({'staffId': staffId, 'sessionId': sessionId}, ACCESS_TOKEN_LIFETIME)
+            sessionToken = generateJwtToken({'sessionId': sessionId}, SESSION_TOKEN_LIFETIME)
+            createNewUserSession(sessionId, staffId)
+            return {'accessToken': accessToken, 'sessionToken': sessionToken}
         else:
             return None
 
@@ -77,18 +104,41 @@ def validateUser(name: str, password: str) -> str | None:
         return None
 
 
-def checkAuthHeader(adminMode: bool) -> Response | dict:
-    token = None
-    if 'authorization' in request.headers:
-        token = request.headers['authorization']
+def checkCredentials(adminMode: bool) -> Response | Dict:
+    accessToken = None
+    sessionToken = None
+    newAccessToken = None
+    if 'accessToken' in request.cookies:
+        accessToken = request.cookies['accessToken']
+    if 'sessionToken' in request.cookies:
+        sessionToken = request.cookies['sessionToken']
 
-    if not token:
-        return create401Response('Authorization header is missing.')
+    if not accessToken or not sessionToken:
+        return create401Response('Credential missing. PLease log in')
 
-    staffId = decodeJwtToken(token)
+    oldAccessPayloadOrResponse = decodeJwtToken(accessToken)
 
-    if isinstance(staffId, Response):
-        return staffId
+    # staffId is None if token is expired
+    if oldAccessPayloadOrResponse is None:
+        accessPayload = decodePayloadWithoutExpiration(accessToken)
+        sessionPayload = decodeJwtToken(sessionToken)
+        if not accessPayload or not sessionPayload:
+            return create401Response('Credential missing. PLease log in')
+        if accessPayload['sessionId'] != sessionPayload['sessionId']:
+            create400Response('Invalid credentials')
+        dbio = DatabaseIO()
+        session = dbio.getSession(sessionPayload['sessionId'])
+        if not session['isValid']:
+            create401Response('Session expired')
+        if accessPayload['staffId'] != session['staffId']:
+            create400Response('Invalid session')
+        newAccessToken = generateJwtToken({'staffId': session['staffId'], 'sessionId': sessionPayload['sessionId']}, ACCESS_TOKEN_LIFETIME)
+        staffId = session['staffId']
+    # staffId is a response if token is invalid
+    elif isinstance(oldAccessPayloadOrResponse, Response):
+        return oldAccessPayloadOrResponse
+    else:
+        staffId = oldAccessPayloadOrResponse['staffId']
 
     dbio = DatabaseIO()
     staff = dbio.getAccountById(staffId)
@@ -96,18 +146,20 @@ def checkAuthHeader(adminMode: bool) -> Response | dict:
     if adminMode and not staff['isAdmin']:
         return create401Response('Not authorized to perform this action.')
 
-    return staff
+    print('newAccessToken', newAccessToken)
+
+    return {'staff': staff, 'newAccessToken': newAccessToken}
 
 
 def tokenRequired(f):
     @wraps(f)
     def decorator():
-        staff = checkAuthHeader(False)
+        creds = checkCredentials(False)
 
-        if not isinstance(staff, Dict):
-            return staff
+        if isinstance(creds, Response):
+            return creds
 
-        return f(staff)
+        return f(creds['staff'], creds['newAccessToken'])
 
     return decorator
 
@@ -115,11 +167,11 @@ def tokenRequired(f):
 def adminRequired(f):
     @wraps(f)
     def decorator():
-        staff = checkAuthHeader(True)
+        creds = checkCredentials(True)
 
-        if not isinstance(staff, Dict):
-            return staff
+        if isinstance(creds, Response):
+            return creds
 
-        return f(staff)
+        return f(creds['staff'], creds['newAccessToken'])
 
     return decorator
