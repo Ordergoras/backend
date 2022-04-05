@@ -290,10 +290,10 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            sql = "INSERT INTO sessions (session_id, staff_id, is_valid) VALUES (%s, %s, %s)"
+            sql = "INSERT INTO sessions (session_id, staff_id) VALUES (%s, %s)"
 
             cursor = self.cnx.cursor()
-            cursor.execute(sql, (sessionId, staffId, True))
+            cursor.execute(sql, (sessionId, staffId))
             self.cnx.commit()
 
         except mysql.connector.Error as error:
@@ -351,4 +351,4 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
-        return {'sessionId': result[0], 'staffId': result[1], 'isValid': result[2]}
+        return {'sessionId': result[0], 'staffId': result[1], 'createdAt': result[2]}
