@@ -3,7 +3,7 @@ from src.database.DatabaseIO import DatabaseIO
 from src.utils.authUtils import validateUserInput, generateSalt, generateHash, validateUser, adminRequired, generateUuid, \
     decodePayloadWithoutExpiration
 from src.utils.responseUtils import create400Response, create401Response, create409Response, create200Response
-from src.utils.globals import COOKIE_LIFETIME
+from src.utils.globals import ACCESS_TOKEN_LIFETIME, SESSION_TOKEN_LIFETIME
 
 staffApi = Blueprint('staffApi', __name__)
 
@@ -46,7 +46,7 @@ def getStaff(_, newAccessToken):
 
     response = jsonify(data)
     if newAccessToken is not None:
-        response.set_cookie('accessToken', newAccessToken, max_age=COOKIE_LIFETIME, httponly=True)
+        response.set_cookie('accessToken', newAccessToken, max_age=ACCESS_TOKEN_LIFETIME, httponly=True)
     return response
 
 
@@ -64,7 +64,7 @@ def setAdminStatus(_, newAccessToken):
 
     response = jsonify(data)
     if newAccessToken is not None:
-        response.set_cookie('accessToken', newAccessToken, max_age=COOKIE_LIFETIME, httponly=True)
+        response.set_cookie('accessToken', newAccessToken, max_age=ACCESS_TOKEN_LIFETIME, httponly=True)
     return response
 
 
@@ -80,8 +80,8 @@ def login():
 
     if tokens['accessToken']:
         response = jsonify({'name': name})
-        response.set_cookie('accessToken', tokens['accessToken'], max_age=COOKIE_LIFETIME, httponly=True)
-        response.set_cookie('sessionToken', tokens['sessionToken'], max_age=COOKIE_LIFETIME, httponly=True)
+        response.set_cookie('accessToken', tokens['accessToken'], max_age=ACCESS_TOKEN_LIFETIME, httponly=True)
+        response.set_cookie('sessionToken', tokens['sessionToken'], max_age=SESSION_TOKEN_LIFETIME, httponly=True)
         return response
     else:
         return create401Response('Entered credentials are invalid')

@@ -5,8 +5,6 @@ from typing import Dict
 from uuid import uuid4
 from flask import request, Response
 import jwt
-import base64
-import json
 from datetime import datetime, timedelta
 from src.database.DatabaseIO import DatabaseIO
 from src.utils.responseUtils import create401Response, create400Response
@@ -113,40 +111,32 @@ def checkCredentials(adminMode: bool) -> Response | Dict:
     if 'sessionToken' in request.cookies:
         sessionToken = request.cookies['sessionToken']
 
-    if not accessToken or not sessionToken:
-        return create401Response('Credential missing. PLease log in')
+    if accessToken is None and sessionToken is None:
+        return create401Response('Credentials missing. PLease log in')
 
-    oldAccessPayloadOrResponse = decodeJwtToken(accessToken)
-
-    # staffId is None if token is expired
-    if oldAccessPayloadOrResponse is None:
-        accessPayload = decodePayloadWithoutExpiration(accessToken)
+    if accessToken is None:
         sessionPayload = decodeJwtToken(sessionToken)
-        if not accessPayload or not sessionPayload:
-            return create401Response('Credential missing. PLease log in')
-        if accessPayload['sessionId'] != sessionPayload['sessionId']:
-            create400Response('Invalid credentials')
+        if sessionPayload is None:
+            return create401Response('Invalid session token. PLease log in')
         dbio = DatabaseIO()
         session = dbio.getSession(sessionPayload['sessionId'])
         if not session['isValid']:
             create401Response('Session expired')
-        if accessPayload['staffId'] != session['staffId']:
-            create400Response('Invalid session')
         newAccessToken = generateJwtToken({'staffId': session['staffId'], 'sessionId': sessionPayload['sessionId']}, ACCESS_TOKEN_LIFETIME)
         staffId = session['staffId']
     # staffId is a response if token is invalid
-    elif isinstance(oldAccessPayloadOrResponse, Response):
-        return oldAccessPayloadOrResponse
     else:
-        staffId = oldAccessPayloadOrResponse['staffId']
+        oldAccessPayloadOrResponse = decodeJwtToken(accessToken)
+        if isinstance(oldAccessPayloadOrResponse, Response):
+            return oldAccessPayloadOrResponse
+        else:
+            staffId = oldAccessPayloadOrResponse['staffId']
 
     dbio = DatabaseIO()
     staff = dbio.getAccountById(staffId)
 
     if adminMode and not staff['isAdmin']:
         return create401Response('Not authorized to perform this action.')
-
-    print('newAccessToken', newAccessToken)
 
     return {'staff': staff, 'newAccessToken': newAccessToken}
 
