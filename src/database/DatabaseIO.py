@@ -297,7 +297,7 @@ class DatabaseIO:
             self.cnx.commit()
 
         except mysql.connector.Error as error:
-            print('DatabaseIO.insertStorageData', error)
+            print('DatabaseIO.insertNewSession', error)
             return False
         finally:
             if self.cnx.is_connected():
@@ -307,19 +307,19 @@ class DatabaseIO:
 
         return True
 
-    def invalidateSession(self, sessionId: str) -> bool:
+    def deleteSession(self, sessionId: str) -> bool:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = "UPDATE sessions SET is_valid = 0 WHERE session_id = '" + sessionId + "'"
+            sql = "DELETE FROM sessions WHERE session_id = '" + sessionId + "'"
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
             self.cnx.commit()
 
         except mysql.connector.Error as error:
-            print('DatabaseIO.insertStorageData', error)
+            print('DatabaseIO.deleteSession', error)
             return False
         finally:
             if self.cnx.is_connected():
@@ -343,7 +343,7 @@ class DatabaseIO:
             self.cnx.commit()
 
         except mysql.connector.Error as error:
-            print('DatabaseIO.getOrder', error)
+            print('DatabaseIO.getSession', error)
             return None
         finally:
             if self.cnx.is_connected():
