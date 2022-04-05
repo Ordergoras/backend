@@ -6,7 +6,7 @@ from src.api.StaffApi import staffApi
 from src.api.StorageApi import storageApi
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True)
 app.config['JSON_AS_ASCII'] = False
 
 app.register_blueprint(storageApi, url_prefix='/storage')
