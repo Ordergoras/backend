@@ -74,7 +74,7 @@ def login():
 
     data = validateUser(name, password)
 
-    if data['accessToken']:
+    if data is not None:
         response = jsonify({'staffId': data['staffId'], 'name': name, 'isAdmin': data['isAdmin']})
         response.set_cookie('accessToken', data['accessToken'], max_age=ACCESS_TOKEN_LIFETIME, httponly=True)
         response.set_cookie('sessionToken', data['sessionToken'], max_age=SESSION_TOKEN_LIFETIME, httponly=True)
