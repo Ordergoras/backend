@@ -1,7 +1,9 @@
 from flask import Blueprint, request, jsonify
 from src.database.DatabaseIO import DatabaseIO
-from src.utils.authUtils import validateUserInput, generateSalt, generateHash, validateUser, tokenRequired, adminRequired, generateUuid
+from src.utils.authUtils import validateUserInput, generateSalt, generateHash, validateUser, adminRequired, generateUuid, \
+    decodePayloadWithoutExpiration
 from src.utils.responseUtils import create400Response, create401Response, create409Response, create200Response
+from src.utils.globals import COOKIE_LIFETIME
 
 staffApi = Blueprint('staffApi', __name__)
 
@@ -32,7 +34,8 @@ def registerStaff():
 
 
 @staffApi.route('/getStaff', methods=['GET'])
-def getStaff():
+@adminRequired
+def getStaff(_, newAccessToken):
     if 'staffId' in request.args:
         staffId: str = request.args['staffId']
     else:
@@ -41,12 +44,15 @@ def getStaff():
     dbio = DatabaseIO()
     data = dbio.getAccountById(staffId)
 
-    return jsonify(data)
+    response = jsonify(data)
+    if newAccessToken is not None:
+        response.set_cookie('accessToken', newAccessToken, max_age=COOKIE_LIFETIME, httponly=True)
+    return response
 
 
 @staffApi.route('/setAdmin', methods=['POST'])
 @adminRequired
-def setAdminStatus(__):
+def setAdminStatus(_, newAccessToken):
     staffId: str = request.json.get('staffId')
     newStatus: bool = request.json.get('newStatus')
 
@@ -56,7 +62,10 @@ def setAdminStatus(__):
     dbio = DatabaseIO()
     data = dbio.setAdminStatus(staffId, newStatus)
 
-    return jsonify(data)
+    response = jsonify(data)
+    if newAccessToken is not None:
+        response.set_cookie('accessToken', newAccessToken, max_age=COOKIE_LIFETIME, httponly=True)
+    return response
 
 
 @staffApi.route('/login', methods=['POST'])
@@ -67,15 +76,26 @@ def login():
     if name is None or password is None:
         return create400Response('No name or password field provided. Please specify all necessary fields.')
 
-    userToken = validateUser(name, password)
+    tokens = validateUser(name, password)
 
-    if userToken:
-        return jsonify({'jwtToken': userToken, 'name': name})
+    if tokens['accessToken']:
+        response = jsonify({'name': name})
+        response.set_cookie('accessToken', tokens['accessToken'], max_age=COOKIE_LIFETIME, httponly=True)
+        response.set_cookie('sessionToken', tokens['sessionToken'], max_age=COOKIE_LIFETIME, httponly=True)
+        return response
     else:
         return create401Response('Entered credentials are invalid')
 
 
 @staffApi.route('/logout', methods=['POST'])
-@tokenRequired
-def logout(staff):
-    return create200Response('Successfully logged out user {name}'.format(name=staff['name']))
+def logout():
+    if request.cookies['sessionToken']:
+        payload = decodePayloadWithoutExpiration(request.cookies['sessionToken'])
+        if payload:
+            dbio = DatabaseIO()
+            dbio.invalidateSession(payload['sessionId'])
+
+    response = create200Response('Successfully logged out user')
+    response.set_cookie('accessToken', '', expires=0)
+    response.set_cookie('sessionToken', '', expires=0)
+    return response
