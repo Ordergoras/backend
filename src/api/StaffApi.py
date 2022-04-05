@@ -82,11 +82,11 @@ def login():
 
 @staffApi.route('/logout', methods=['POST'])
 def logout():
-    if request.cookies['sessionToken']:
+    if 'sessionToken' in request.cookies:
         payload = decodeJwtToken(request.cookies['sessionToken'])
         if payload:
             dbio = DatabaseIO()
-            dbio.invalidateSession(payload['sessionId'])
+            dbio.deleteSession(payload['sessionId'])
 
     response = create200Response('Successfully logged out user')
     response.set_cookie('accessToken', '', expires=0)
