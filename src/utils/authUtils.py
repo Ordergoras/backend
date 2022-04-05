@@ -13,6 +13,8 @@ from src.utils.globals import ACCESS_TOKEN_LIFETIME, SESSION_TOKEN_LIFETIME
 
 def validateUserInput(input_type: str, **kwargs) -> bool:
     if input_type == 'auth':
+        if len(kwargs['name']) == 0 or len(kwargs['password']) == 0:
+            return False
         if len(kwargs['name']) <= 255 and len(kwargs['password']) <= 255:
             return True
         else:
