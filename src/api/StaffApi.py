@@ -69,12 +69,12 @@ def login():
     if name is None or password is None:
         return create400Response('No name or password field provided. Please specify all necessary fields.')
 
-    tokens = validateUser(name, password)
+    data = validateUser(name, password)
 
-    if tokens['accessToken']:
-        response = jsonify({'name': name})
-        response.set_cookie('accessToken', tokens['accessToken'], max_age=ACCESS_TOKEN_LIFETIME, httponly=True)
-        response.set_cookie('sessionToken', tokens['sessionToken'], max_age=SESSION_TOKEN_LIFETIME, httponly=True)
+    if data['accessToken']:
+        response = jsonify({'staffId': data['staffId'], 'name': name})
+        response.set_cookie('accessToken', data['accessToken'], max_age=ACCESS_TOKEN_LIFETIME, httponly=True)
+        response.set_cookie('sessionToken', data['sessionToken'], max_age=SESSION_TOKEN_LIFETIME, httponly=True)
         return response
     else:
         return create401Response('Entered credentials are invalid')
