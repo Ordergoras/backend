@@ -27,9 +27,12 @@ def registerStaff():
     if not hasInserted:
         return create409Response('Name already used')
 
-    data = dbio.getAccountById(staffId)
+    data = validateUser(name, password)
 
-    return create200ResponseData(data)
+    response = jsonify({'staffId': staffId, 'name': name, 'isAdmin': False})
+    response.set_cookie('accessToken', data['accessToken'], max_age=ACCESS_TOKEN_LIFETIME, httponly=True)
+    response.set_cookie('sessionToken', data['sessionToken'], max_age=SESSION_TOKEN_LIFETIME, httponly=True)
+    return response
 
 
 @staffApi.route('/getStaff', methods=['GET'])
@@ -72,7 +75,7 @@ def login():
     data = validateUser(name, password)
 
     if data['accessToken']:
-        response = jsonify({'staffId': data['staffId'], 'name': name})
+        response = jsonify({'staffId': data['staffId'], 'name': name, 'isAdmin': data['isAdmin']})
         response.set_cookie('accessToken', data['accessToken'], max_age=ACCESS_TOKEN_LIFETIME, httponly=True)
         response.set_cookie('sessionToken', data['sessionToken'], max_age=SESSION_TOKEN_LIFETIME, httponly=True)
         return response

@@ -86,7 +86,7 @@ def validateUser(name: str, password: str) -> Dict[str, str] | None:
             accessToken = generateJwtToken({'staffId': staffId, 'sessionId': sessionId}, ACCESS_TOKEN_LIFETIME)
             sessionToken = generateJwtToken({'sessionId': sessionId}, SESSION_TOKEN_LIFETIME)
             createNewUserSession(sessionId, staffId)
-            return {'accessToken': accessToken, 'sessionToken': sessionToken, 'staffId': staffId}
+            return {'accessToken': accessToken, 'sessionToken': sessionToken, 'staffId': staffId, 'isAdmin': currentUser['isAdmin']}
         else:
             return None
 
