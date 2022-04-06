@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Dict
 from flask import Blueprint, request
 from src.database.DatabaseIO import DatabaseIO
-from src.utils.authUtils import generateUuid, tokenRequired
+from src.utils.authUtils import generateUuid, tokenRequired, validateUserInput
 from src.utils.responseUtils import create400Response, create200Response, create200ResponseData
 
 ordersApi = Blueprint('ordersApi', __name__)
@@ -16,6 +16,8 @@ def addNewOrder(_, newAccessToken):
     orderedItems: Dict[str, int] = request.json.get('orderedItems')
     if tableNr is None or staffId is None or orderedItems is None:
         return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
+    elif not validateUserInput('orders', tableNr=tableNr, staffId=staffId, orderedItems=orderedItems):
+        return create400Response(message='bErrorFieldInvalid')
 
     orderId = generateUuid()
     timestamp = datetime.now().timestamp()

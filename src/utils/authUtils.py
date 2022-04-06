@@ -9,13 +9,28 @@ from datetime import datetime, timedelta
 from src.database.DatabaseIO import DatabaseIO
 from src.utils.responseUtils import create401Response, create400Response
 from src.utils.globals import ACCESS_TOKEN_LIFETIME, SESSION_TOKEN_LIFETIME
+from src.utils.types import ItemGroup
 
 
 def validateUserInput(input_type: str, **kwargs) -> bool:
-    if input_type == 'auth':
+    if input_type == 'staff':
         if len(kwargs['name']) == 0 or len(kwargs['password']) == 0:
             return False
         if len(kwargs['name']) <= 255 and len(kwargs['password']) <= 255:
+            return True
+        else:
+            return False
+    if input_type == 'storage':
+        if len(kwargs['name']) == 0 or kwargs['amount'] == 0 or len(kwargs['group']) == 0:
+            return False
+        if len(kwargs['name']) <= 255 and kwargs['amount'] >= 0 and kwargs['group'] in ItemGroup.__members__.keys():
+            return True
+        else:
+            return False
+    if input_type == 'orders':
+        if kwargs['tableNr'] == 0 or len(kwargs['staffId']) == 0 or len(kwargs['orderedItems']) == 0:
+            return False
+        if kwargs['tableNr'] >= 0 and len(kwargs['staffId']) <= 255 and len(kwargs['orderedItems']) > 0:
             return True
         else:
             return False

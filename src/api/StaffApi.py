@@ -14,7 +14,7 @@ def registerStaff():
 
     if name is None or password is None:
         return create400Response(message='bErrorFieldCheck')
-    elif not validateUserInput('auth', name=name, password=password):
+    elif not validateUserInput('staff', name=name, password=password):
         return create400Response(message='errorCredInvalid')
 
     salt = generateSalt()
@@ -71,7 +71,7 @@ def login():
 
     if name is None or password is None:
         return create400Response(message='bErrorFieldCheck')
-    elif not validateUserInput('auth', name=name, password=password):
+    elif not validateUserInput('staff', name=name, password=password):
         return create400Response(message='errorCredInvalid')
 
     data = validateUser(name, password)

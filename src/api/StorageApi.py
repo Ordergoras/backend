@@ -1,8 +1,8 @@
 from typing import List, Dict
 from flask import Blueprint, request
 from src.database.DatabaseIO import DatabaseIO
-from src.utils.authUtils import generateUuid, tokenRequired, adminRequired
-from src.utils.responseUtils import create400Response, create200Response, create200ResponseData
+from src.utils.authUtils import generateUuid, tokenRequired, adminRequired, validateUserInput
+from src.utils.responseUtils import create400Response, create200ResponseData
 from src.utils.types import ItemGroup
 
 storageApi = Blueprint('storageApi', __name__)
@@ -34,8 +34,11 @@ def addNewItem(_, newAccessToken):
     name: str = request.json.get('name')
     amount: int = request.json.get('amount')
     group: ItemGroup = request.json.get('group')
+
     if name is None or amount is None or group is None:
         return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
+    elif not validateUserInput('storage', name=name, amount=amount, group=group):
+        return create400Response(message='bErrorFieldInvalid')
 
     itemId = generateUuid()
 
