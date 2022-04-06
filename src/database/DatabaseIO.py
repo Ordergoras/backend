@@ -107,6 +107,9 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
+        if result is None:
+            return None
+
         return {a: {'name': b, 'amount': c, 'group': d} for a, b, c, d in result}
 
     def getStorageFullData(self) -> Dict[str, Dict[str, int]] | None:
@@ -133,6 +136,9 @@ class DatabaseIO:
                 self.cnx.close()
             if cursor is not None:
                 cursor.close()
+
+        if result is None:
+            return None
 
         return {a: {'name': b, 'amount': c, 'group': d} for a, b, c, d in result}
 
@@ -180,6 +186,9 @@ class DatabaseIO:
                 self.cnx.close()
             if cursor is not None:
                 cursor.close()
+
+        if result is None:
+            return None
 
         return {
             'orderId': result[0],
@@ -236,6 +245,9 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
+        if result is None:
+            return None
+
         return {'staffId': result[0], 'name': result[1], 'isAdmin': bool(result[2])}
 
     def getAccountByNameWithAuthData(self, name: str) -> Dict[str, Union[str, bool]] | None:
@@ -259,6 +271,9 @@ class DatabaseIO:
                 self.cnx.close()
             if cursor is not None:
                 cursor.close()
+
+        if result is None:
+            return None
 
         return {'staffId': result[0], 'name': result[1], 'isAdmin': bool(result[2]), 'password': result[3], 'salt': result[4]}
 
@@ -350,5 +365,8 @@ class DatabaseIO:
                 self.cnx.close()
             if cursor is not None:
                 cursor.close()
+
+        if result is None:
+            return None
 
         return {'sessionId': result[0], 'staffId': result[1], 'createdAt': result[2]}
