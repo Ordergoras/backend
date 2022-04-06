@@ -11,11 +11,11 @@ staffApi = Blueprint('staffApi', __name__)
 def registerStaff():
     name: str = request.json.get('name')
     password: str = request.json.get('password')
-    if name is None or password is None:
-        return create400Response('No name or password field provided. Please specify all necessary fields.')
 
-    if not validateUserInput('auth', name=name, password=password):
-        return create400Response('Enter a valid name and password.')
+    if name is None or password is None:
+        return create400Response(message='bErrorFieldCheck')
+    elif not validateUserInput('auth', name=name, password=password):
+        return create400Response(message='errorCredInvalid')
 
     salt = generateSalt()
     passHash = generateHash(password, salt)
@@ -25,7 +25,7 @@ def registerStaff():
     hasInserted = dbio.insertNewAccount(staffId, name, passHash, salt)
 
     if not hasInserted:
-        return create409Response('Name already used')
+        return create409Response(message='bErrorDupName')
 
     data = validateUser(name, password)
 
@@ -41,12 +41,12 @@ def getStaff(_, newAccessToken):
     if 'staffId' in request.args:
         staffId: str = request.args['staffId']
     else:
-        return create400Response('No staffId field provided. Please specify all necessary fields.', newAccessToken)
+        return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
 
     dbio = DatabaseIO()
     data = dbio.getAccountById(staffId)
 
-    return create200ResponseData(data, newAccessToken)
+    return create200ResponseData(body=data, newAccessToken=newAccessToken)
 
 
 @staffApi.route('/setAdmin', methods=['POST'])
@@ -56,12 +56,12 @@ def setAdminStatus(_, newAccessToken):
     newStatus: bool = request.json.get('newStatus')
 
     if staffId is None or newStatus is None:
-        return create400Response('No staffId or newStatus field provided. Please specify all necessary fields.', newAccessToken)
+        return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
 
     dbio = DatabaseIO()
     data = dbio.setAdminStatus(staffId, newStatus)
 
-    return create200ResponseData(data, newAccessToken)
+    return create200ResponseData(body=data, newAccessToken=newAccessToken)
 
 
 @staffApi.route('/login', methods=['POST'])
@@ -70,7 +70,9 @@ def login():
     password: str = request.json.get('password')
 
     if name is None or password is None:
-        return create400Response('No name or password field provided. Please specify all necessary fields.')
+        return create400Response(message='bErrorFieldCheck')
+    elif not validateUserInput('auth', name=name, password=password):
+        return create400Response(message='errorCredInvalid')
 
     data = validateUser(name, password)
 
@@ -80,7 +82,7 @@ def login():
         response.set_cookie('sessionToken', data['sessionToken'], max_age=SESSION_TOKEN_LIFETIME, httponly=True)
         return response
     else:
-        return create401Response('Entered credentials are invalid')
+        return create401Response(message='bErrorCredInvalid')
 
 
 @staffApi.route('/logout', methods=['POST'])
@@ -91,7 +93,7 @@ def logout():
             dbio = DatabaseIO()
             dbio.deleteSession(payload['sessionId'])
 
-    response = create200Response('Successfully logged out user')
+    response = create200Response(message='bSuccessLogout')
     response.set_cookie('accessToken', '', expires=0)
     response.set_cookie('sessionToken', '', expires=0)
     return response

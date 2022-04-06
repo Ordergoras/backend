@@ -55,7 +55,7 @@ def decodeJwtToken(token: str) -> Dict[str, str] | Response | None:
         return None
     except jwt.InvalidTokenError as error:
         print('authUtils.decodeJwtToken.2', error)
-        return create400Response('Token is invalid')
+        return create400Response('bErrorCredInvalid')
 
     return decodedToken
 
@@ -104,16 +104,16 @@ def checkCredentials(adminMode: bool) -> Response | Dict:
         sessionToken = request.cookies['sessionToken']
 
     if accessToken is None and sessionToken is None:
-        return create401Response('Credentials missing. PLease log in')
+        return create401Response('bErrorCredInvalid')
 
     if accessToken is None:
         sessionPayload = decodeJwtToken(sessionToken)
         if sessionPayload is None:
-            return create401Response('Invalid session token. PLease log in')
+            return create401Response('bErrorCredInvalid')
         dbio = DatabaseIO()
         session = dbio.getSession(sessionPayload['sessionId'])
         if not session['isValid']:
-            create401Response('Session expired')
+            create401Response('bErrorSessionExp')
         newAccessToken = generateJwtToken({'staffId': session['staffId'], 'sessionId': sessionPayload['sessionId']}, ACCESS_TOKEN_LIFETIME)
         staffId = session['staffId']
     # staffId is a response if token is invalid
@@ -128,7 +128,7 @@ def checkCredentials(adminMode: bool) -> Response | Dict:
     staff = dbio.getAccountById(staffId)
 
     if adminMode and not staff['isAdmin']:
-        return create401Response('Not authorized to perform this action.')
+        return create401Response('bErrorUnauthorized')
 
     return {'staff': staff, 'newAccessToken': newAccessToken}
 

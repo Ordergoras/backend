@@ -13,11 +13,11 @@ storageApi = Blueprint('storageApi', __name__)
 def getItems(_, newAccessToken):
     itemIds: List[str] = request.json.get('itemIds')
     if itemIds is None:
-        return create400Response('No itemIds field provided. Please specify all necessary fields.', newAccessToken)
+        return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
 
     dbio = DatabaseIO()
     data = dbio.getStorageItemData(itemIds)
-    return create200ResponseData(data, newAccessToken)
+    return create200ResponseData(body=data, newAccessToken=newAccessToken)
 
 
 @storageApi.route('/getAllItems', methods=['GET'])
@@ -35,7 +35,7 @@ def addNewItem(_, newAccessToken):
     amount: int = request.json.get('amount')
     group: ItemGroup = request.json.get('group')
     if name is None or amount is None or group is None:
-        return create400Response('No name or amount field provided. Please specify all necessary fields.', newAccessToken)
+        return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
 
     itemId = generateUuid()
 
@@ -43,9 +43,9 @@ def addNewItem(_, newAccessToken):
     hasInserted = dbio.insertStorageData(itemId, name, amount, group)
 
     if hasInserted:
-        return create200Response('Inserted {name} with {amount} units'.format(name=name, amount=amount), newAccessToken)
+        return create200ResponseData(body={'message': 'bSuccessItemInsert', 'args': {'name': name, 'amount': amount}}, newAccessToken=newAccessToken)
     else:
-        return create400Response('Couldn\'t insert item', newAccessToken)
+        return create400Response(message='bErrorItemInsert', newAccessToken=newAccessToken)
 
 
 @storageApi.route('/updateItemAmount', methods=['POST'])
@@ -54,13 +54,13 @@ def updateItemAmount(_, newAccessToken):
     itemId: str = request.json.get('itemId')
     amountChange: int = request.json.get('amountChange')
     if itemId is None or amountChange is None:
-        return create400Response('No itemId or amountChange field provided. Please specify all necessary fields.', newAccessToken)
+        return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
 
     dbio = DatabaseIO()
     dbio.updateStorageData(itemId, amountChange)
     data = dbio.getStorageItemData([itemId])
 
-    return create200ResponseData(data, newAccessToken)
+    return create200ResponseData(body=data, newAccessToken=newAccessToken)
 
 
 @storageApi.route('/retrieveItems', methods=['POST'])
@@ -68,10 +68,10 @@ def updateItemAmount(_, newAccessToken):
 def retrieveItems(_, newAccessToken):
     retrievedItems: Dict[str, int] = request.json.get('retrievedItems')
     if retrievedItems is None:
-        return create400Response('No retrievedItems field provided. Please specify all necessary fields.', newAccessToken)
+        return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
 
     dbio = DatabaseIO()
     dbio.retrieveItemsFromStorage(retrievedItems)
     data = dbio.getStorageItemData([key for key in retrievedItems])
 
-    return create200ResponseData(data, newAccessToken)
+    return create200ResponseData(body=data, newAccessToken=newAccessToken)
