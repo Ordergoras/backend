@@ -345,7 +345,7 @@ class DatabaseIO:
 
         return True
 
-    def getSession(self, sessionId: str) -> Dict[str, Union[str, bool]] | None:
+    def getSession(self, sessionId: str) -> Dict[str, Union[str, bool, datetime]] | None:
         cursor = None
         try:
             self.establishConnection()
