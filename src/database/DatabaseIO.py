@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Dict, Union
 import mysql.connector
 import os
@@ -142,15 +143,15 @@ class DatabaseIO:
 
         return {a: {'name': b, 'amount': c, 'group': d} for a, b, c, d in result}
 
-    def insertOrderData(self, orderId: str, tableId: int, staffId: str, orderedItems: Dict[str, int], timestamp: float) -> bool:
+    def insertOrderData(self, orderId: str, tableId: int, staffId: str, orderedItems: Dict[str, int]) -> bool:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = "INSERT INTO orders (order_id, table_nr, staff_id, ordered_items, timestamp) VALUES (%s, %s, %s, %s, %s)"
+            sql = "INSERT INTO orders (order_id, table_nr, staff_id, ordered_items) VALUES (%s, %s, %s, %s)"
 
             cursor = self.cnx.cursor()
-            cursor.execute(sql, (orderId, tableId, staffId, json.dumps(orderedItems), timestamp))
+            cursor.execute(sql, (orderId, tableId, staffId, json.dumps(orderedItems)))
             self.cnx.commit()
 
         except mysql.connector.Error as error:
@@ -165,7 +166,7 @@ class DatabaseIO:
         self.retrieveItemsFromStorage(orderedItems)
         return True
 
-    def getOrder(self, orderId: str) -> Dict[str, Union[str, int, Dict[str, int], float]] | None:
+    def getOrder(self, orderId: str) -> Dict[str, Union[str, int, Dict[str, int], datetime]] | None:
         cursor = None
         try:
             self.establishConnection()
@@ -195,7 +196,7 @@ class DatabaseIO:
             'tableNr': result[1],
             'staffId': result[2],
             'orderedItems': json.loads(result[3]),
-            'timestamp': result[4],
+            'createdAt': result[4],
             'completed': result[5]
         }
 

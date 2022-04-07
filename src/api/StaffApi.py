@@ -46,6 +46,9 @@ def getStaff(_, newAccessToken):
     dbio = DatabaseIO()
     data = dbio.getAccountById(staffId)
 
+    if data is None:
+        return create400Response(message='bDataNotFound', newAccessToken=newAccessToken)
+
     return create200ResponseData(body=data, newAccessToken=newAccessToken)
 
 
@@ -60,6 +63,9 @@ def setAdminStatus(_, newAccessToken):
 
     dbio = DatabaseIO()
     data = dbio.setAdminStatus(staffId, newStatus)
+
+    if data is None:
+        return create400Response(message='bDataNotFound', newAccessToken=newAccessToken)
 
     return create200ResponseData(body=data, newAccessToken=newAccessToken)
 

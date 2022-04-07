@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Dict
 from flask import Blueprint, request
 from src.database.DatabaseIO import DatabaseIO
@@ -20,10 +19,9 @@ def addNewOrder(_, newAccessToken):
         return create400Response(message='bErrorFieldInvalid')
 
     orderId = generateUuid()
-    timestamp = datetime.now().timestamp()
 
     dbio = DatabaseIO()
-    hasInserted = dbio.insertOrderData(orderId, tableNr, staffId, orderedItems, timestamp)
+    hasInserted = dbio.insertOrderData(orderId, tableNr, staffId, orderedItems)
 
     if hasInserted:
         return create200Response(message='bSuccessOrderInsert', newAccessToken=newAccessToken)
@@ -41,5 +39,8 @@ def getOrder(_, newAccessToken):
 
     dbio = DatabaseIO()
     data = dbio.getOrder(orderId)
+
+    if data is None:
+        return create400Response(message='bDataNotFound', newAccessToken=newAccessToken)
 
     return create200ResponseData(body=data, newAccessToken=newAccessToken)
