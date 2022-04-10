@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from src.database.DatabaseIO import DatabaseIO
-from src.utils.authUtils import validateUserInput, generateSalt, generateHash, validateUser, adminRequired, generateUuid, decodeJwtToken
+from src.utils.authUtils import validateUserInput, generateSalt, generateHash, validateUser, adminRequired, generateUuid, decodeJwtToken, \
+    tokenRequired
 from src.utils.responseUtils import create400Response, create401Response, create409Response, create200Response, create200ResponseData
 from src.utils.globals import ACCESS_TOKEN_LIFETIME, SESSION_TOKEN_LIFETIME
 
@@ -103,3 +104,9 @@ def logout():
     response.set_cookie('accessToken', '', expires=0)
     response.set_cookie('sessionToken', '', expires=0)
     return response
+
+
+@staffApi.route('/verifyCred', methods=['GET'])
+@tokenRequired
+def verifyCred(staff, newAccessToken):
+    return create200ResponseData(body=staff, newAccessToken=newAccessToken)
