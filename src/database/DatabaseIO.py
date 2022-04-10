@@ -16,15 +16,15 @@ class DatabaseIO:
         except mysql.connector.Error as error:
             print('DatabaseIO.establishConnection', error)
 
-    def insertStorageData(self, itemId: str, name: str, amount: int, group: ItemGroup) -> bool:
+    def insertStorageData(self, itemId: str, name: str, amount: int, group: ItemGroup, price: float) -> bool:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = "INSERT INTO storage (id, name, amount, `group`) VALUES (%s, %s, %s, %s)"
+            sql = "INSERT INTO storage (id, name, amount, `group`, price) VALUES (%s, %s, %s, %s, %s)"
 
             cursor = self.cnx.cursor()
-            cursor.execute(sql, (itemId, name, amount, group))
+            cursor.execute(sql, (itemId, name, amount, group, price))
             self.cnx.commit()
 
         except mysql.connector.Error as error:
@@ -111,7 +111,7 @@ class DatabaseIO:
         if result is None:
             return None
 
-        return [{'itemId': a, 'name': b, 'amount': c, 'group': d} for a, b, c, d in result]
+        return [{'itemId': a, 'name': b, 'amount': c, 'group': d, 'price': e} for a, b, c, d, e in result]
 
     def getStorageFullData(self) -> List[Dict[str, Union[str, int, ItemGroup]]] | None:
         cursor = None
@@ -141,7 +141,7 @@ class DatabaseIO:
         if result is None:
             return None
 
-        return [{'itemId': a, 'name': b, 'amount': c, 'group': d} for a, b, c, d in result]
+        return [{'itemId': a, 'name': b, 'amount': c, 'group': d, 'price': e} for a, b, c, d, e in result]
 
     def insertOrderData(self, orderId: str, tableId: int, staffId: str, orderedItems: Dict[str, int]) -> bool:
         cursor = None

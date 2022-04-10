@@ -38,6 +38,7 @@ def addNewItem(_, newAccessToken):
     name: str = request.json.get('name')
     amount: int = request.json.get('amount')
     group: ItemGroup = request.json.get('group')
+    price: float = request.json.get('price')
 
     if name is None or amount is None or group is None:
         return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
@@ -47,7 +48,7 @@ def addNewItem(_, newAccessToken):
     itemId = generateUuid()
 
     dbio = DatabaseIO()
-    hasInserted = dbio.insertStorageData(itemId, name, amount, group)
+    hasInserted = dbio.insertStorageData(itemId, name, amount, group, price)
 
     if hasInserted:
         return create200ResponseData(body={'message': 'bSuccessItemInsert', 'args': {'name': name, 'amount': amount}}, newAccessToken=newAccessToken)
