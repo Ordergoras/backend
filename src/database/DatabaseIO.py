@@ -84,7 +84,7 @@ class DatabaseIO:
 
         return self.getStorageItemData([key for key in retrievedItems.keys()])
 
-    def getStorageItemData(self, itemIds: List[str]) -> Dict[str, Dict[str, int]] | None:
+    def getStorageItemData(self, itemIds: List[str]) -> List[Dict[str, Union[str, int, ItemGroup]]] | None:
         cursor = None
         result = []
         try:
@@ -111,9 +111,9 @@ class DatabaseIO:
         if result is None:
             return None
 
-        return {a: {'name': b, 'amount': c, 'group': d} for a, b, c, d in result}
+        return [{'itemId': a, 'name': b, 'amount': c, 'group': d} for a, b, c, d in result]
 
-    def getStorageFullData(self) -> Dict[str, Dict[str, int]] | None:
+    def getStorageFullData(self) -> List[Dict[str, Union[str, int, ItemGroup]]] | None:
         cursor = None
         result = []
         try:
@@ -141,7 +141,7 @@ class DatabaseIO:
         if result is None:
             return None
 
-        return {a: {'name': b, 'amount': c, 'group': d} for a, b, c, d in result}
+        return [{'itemId': a, 'name': b, 'amount': c, 'group': d} for a, b, c, d in result]
 
     def insertOrderData(self, orderId: str, tableId: int, staffId: str, orderedItems: Dict[str, int]) -> bool:
         cursor = None

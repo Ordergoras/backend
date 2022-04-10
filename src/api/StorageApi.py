@@ -29,7 +29,7 @@ def getItems(_, newAccessToken):
 def getAllItems(_, newAccessToken):
     dbio = DatabaseIO()
     data = dbio.getStorageFullData()
-    return create200ResponseData(data, newAccessToken)
+    return create200ResponseData(body=data, newAccessToken=newAccessToken)
 
 
 @storageApi.route('/postItem', methods=['POST'])

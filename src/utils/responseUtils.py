@@ -1,5 +1,5 @@
 import json
-from typing import Dict
+from typing import Dict, List
 from flask import Response, jsonify
 from src.utils.globals import ACCESS_TOKEN_LIFETIME
 
@@ -11,7 +11,7 @@ def create200Response(message: str, newAccessToken: str = None) -> Response:
     return response
 
 
-def create200ResponseData(body: Dict, newAccessToken: str = None) -> Response:
+def create200ResponseData(body: Dict | List, newAccessToken: str = None) -> Response:
     response = jsonify(body)
     if newAccessToken is not None:
         response.set_cookie('accessToken', newAccessToken, max_age=ACCESS_TOKEN_LIFETIME, httponly=True)
