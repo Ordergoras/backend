@@ -127,7 +127,7 @@ def checkCredentials(adminMode: bool) -> Response | Dict:
             return create401Response('bErrorCredInvalid')
         dbio = DatabaseIO()
         session = dbio.getSession(sessionPayload['sessionId'])
-        if session is None or datetime.now() - timedelta(days=31) <= session['createdAt']:
+        if session is None or datetime.now() > session['createdAt'] + timedelta(days=31):
             return create401Response('bErrorSessionExp')
         newAccessToken = generateJwtToken({'staffId': session['staffId'], 'sessionId': sessionPayload['sessionId']}, ACCESS_TOKEN_LIFETIME)
         staffId = session['staffId']
