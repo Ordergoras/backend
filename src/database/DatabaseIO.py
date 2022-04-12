@@ -200,6 +200,41 @@ class DatabaseIO:
             'completed': result[5]
         }
 
+    def getMyOrders(self, staffId: str) -> List[Dict[str, Union[str, int, Dict[str, int], datetime]]] | None:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = "SELECT * FROM orders WHERE staff_id = '" + staffId + "'"
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
+            result = cursor.fetchall()
+
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print('DatabaseIO.getMyOrders', error)
+            return None
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        if result is None:
+            return None
+
+        return [
+            {'orderId': a,
+             'tableNr': b,
+             'staffId': c,
+             'orderedItems': json.loads(d),
+             'createdAt': e,
+             'completed': f
+             } for a, b, c, d, e, f in result
+        ]
+
     def insertNewAccount(self, staffId: str,  name: str, password: str, salt: str) -> bool:
         cursor = None
         try:

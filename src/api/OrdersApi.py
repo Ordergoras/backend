@@ -44,3 +44,12 @@ def getOrder(_, newAccessToken):
         return create400Response(message='bDataNotFound', newAccessToken=newAccessToken)
 
     return create200ResponseData(body=data, newAccessToken=newAccessToken)
+
+
+@ordersApi.route('/myOrders', methods=['GET'])
+@tokenRequired
+def myOrders(staff, newAccessToken):
+    dbio = DatabaseIO()
+    data = dbio.getMyOrders(staff['staffId'])
+
+    return create200ResponseData(body=data, newAccessToken=newAccessToken)
