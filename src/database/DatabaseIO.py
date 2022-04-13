@@ -171,7 +171,8 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            sql = "SELECT * FROM orders WHERE order_id = '" + orderId + "'"
+            sql = """SELECT order_id, table_nr, orders.staff_id, `name`, ordered_items, created_at, completed FROM 
+                     orders, staff WHERE orders.staff_id = staff.staff_id AND orders.order_id = '""" + orderId + "'"
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
@@ -195,9 +196,10 @@ class DatabaseIO:
             'orderId': result[0],
             'tableNr': result[1],
             'staffId': result[2],
-            'orderedItems': json.loads(result[3]),
-            'createdAt': result[4],
-            'completed': result[5]
+            'staffName': result[3],
+            'orderedItems': json.loads(result[4]),
+            'createdAt': result[5],
+            'completed': result[6]
         }
 
     def getMyOrders(self, staffId: str) -> List[Dict[str, Union[str, int, Dict[str, int], datetime]]] | None:
@@ -205,7 +207,8 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            sql = "SELECT * FROM orders WHERE staff_id = '" + staffId + "'"
+            sql = """SELECT order_id, table_nr, orders.staff_id, `name`, ordered_items, created_at, completed FROM 
+                     orders, staff WHERE orders.staff_id = staff.staff_id AND orders.staff_id = '""" + staffId + "'"
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
@@ -229,10 +232,11 @@ class DatabaseIO:
             {'orderId': a,
              'tableNr': b,
              'staffId': c,
-             'orderedItems': json.loads(d),
-             'createdAt': e,
-             'completed': f
-             } for a, b, c, d, e, f in result
+             'staffName': d,
+             'orderedItems': json.loads(e),
+             'createdAt': f,
+             'completed': g
+             } for a, b, c, d, e, f, g in result
         ]
 
     def insertNewAccount(self, staffId: str,  name: str, password: str, salt: str) -> bool:
