@@ -143,6 +143,36 @@ class DatabaseIO:
 
         return [{'itemId': a, 'name': b, 'amount': c, 'group': d, 'price': e} for a, b, c, d, e in result]
 
+    def getItemIdMap(self) -> Dict[str, str] | None:
+        cursor = None
+        result = []
+        try:
+            self.establishConnection()
+
+            sql = "SELECT id, `name` FROM storage"
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
+
+            for row in cursor:
+                result.append(row)
+
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print('DatabaseIO.getStorageFullData', error)
+            return None
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        if result is None:
+            return None
+
+        return {a: b for a, b in result}
+
     def insertOrderData(self, orderId: str, tableId: int, staffId: str, orderedItems: Dict[str, int]) -> bool:
         cursor = None
         try:
