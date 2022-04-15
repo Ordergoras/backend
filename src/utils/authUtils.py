@@ -31,7 +31,11 @@ def validateUserInput(input_type: str, **kwargs) -> bool:
         if kwargs['tableNr'] == 0 or len(kwargs['staffId']) == 0 or len(kwargs['orderedItems']) == 0:
             return False
         if kwargs['tableNr'] >= 0 and len(kwargs['staffId']) <= 255 and len(kwargs['orderedItems']) > 0:
-            return True
+            dbio = DatabaseIO()
+            if dbio.getAccountById(kwargs['staffId']) is None:
+                return False
+            else:
+                return True
         else:
             return False
 
