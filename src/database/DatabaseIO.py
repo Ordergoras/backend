@@ -43,7 +43,7 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            sql = "UPDATE storage SET amount = amount + " + str(amountChange) + " WHERE id = '" + itemId + "'"
+            sql = "UPDATE storage SET amount = amount + {diff} WHERE id = '{itemId}'".format(diff=str(amountChange), itemId=itemId)
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
@@ -66,7 +66,7 @@ class DatabaseIO:
             self.establishConnection()
 
             for key, value in retrievedItems.items():
-                sql = "UPDATE storage SET amount = amount - " + str(value) + " WHERE id = '" + key + "'"
+                sql = "UPDATE storage SET amount = amount - {diff} WHERE id = '{key}'".format(diff=str(value), key=key)
 
                 cursor = self.cnx.cursor()
                 cursor.execute(sql)
@@ -91,7 +91,7 @@ class DatabaseIO:
             self.establishConnection()
 
             for itemId in itemIds:
-                sql = "SELECT * FROM storage WHERE id = '" + itemId + "'"
+                sql = "SELECT * FROM storage WHERE id = '{itemId}'".format(itemId=itemId)
 
                 cursor = self.cnx.cursor()
                 cursor.execute(sql)
@@ -203,7 +203,7 @@ class DatabaseIO:
             self.establishConnection()
 
             sql = """SELECT order_id, table_nr, orders.staff_id, `name`, ordered_items, completed_items, created_at, completed FROM 
-                     orders, staff WHERE orders.staff_id = staff.staff_id AND orders.order_id = '""" + orderId + "'"
+                     orders, staff WHERE orders.staff_id = staff.staff_id AND orders.order_id = '{orderId}'""".format(orderId=orderId)
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
@@ -240,7 +240,7 @@ class DatabaseIO:
             self.establishConnection()
 
             sql = """SELECT order_id, table_nr, orders.staff_id, `name`, ordered_items, completed_items, created_at, completed FROM 
-                     orders, staff WHERE orders.staff_id = staff.staff_id AND orders.staff_id = '""" + staffId + "'"
+                     orders, staff WHERE orders.staff_id = staff.staff_id AND orders.staff_id = '{staffId}'""".format(staffId=staffId)
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
@@ -389,7 +389,7 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            sql = "SELECT * FROM staff WHERE staff_id = '" + staffId + "'"
+            sql = "SELECT * FROM staff WHERE staff_id = '{staffId}'".format(staffId=staffId)
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
@@ -416,7 +416,7 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            sql = "SELECT * FROM staff WHERE name = '" + name + "'"
+            sql = "SELECT * FROM staff WHERE name = '{name}'".format(name=name)
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
@@ -443,7 +443,7 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            sql = "UPDATE staff SET is_admin = " + str(newStatus) + " WHERE staff_id = '" + str(staffId) + "'"
+            sql = "UPDATE staff SET is_admin = {newStatus} WHERE staff_id = '{staffId}'".format(newStatus=str(newStatus), staffId=staffId)
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
@@ -488,7 +488,7 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            sql = "DELETE FROM sessions WHERE session_id = '" + sessionId + "'"
+            sql = "DELETE FROM sessions WHERE session_id = '{sessionId}'".format(sessionId=sessionId)
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
@@ -510,7 +510,7 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            sql = "SELECT * FROM sessions WHERE session_id = '" + sessionId + "'"
+            sql = "SELECT * FROM sessions WHERE session_id = '{sessionId}'".format(sessionId=sessionId)
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
