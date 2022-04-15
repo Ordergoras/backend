@@ -173,15 +173,15 @@ class DatabaseIO:
 
         return {a: b for a, b in result}
 
-    def insertOrderData(self, orderId: str, tableId: int, staffId: str, orderedItems: Dict[str, int]) -> bool:
+    def insertOrderData(self, orderId: str, tableId: int, staffId: str, orderedItems: Dict[str, int], completedItems: Dict[str, int]) -> bool:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = "INSERT INTO orders (order_id, table_nr, staff_id, ordered_items) VALUES (%s, %s, %s, %s)"
+            sql = "INSERT INTO orders (order_id, table_nr, staff_id, ordered_items, completed_items) VALUES (%s, %s, %s, %s, %s)"
 
             cursor = self.cnx.cursor()
-            cursor.execute(sql, (orderId, tableId, staffId, json.dumps(orderedItems)))
+            cursor.execute(sql, (orderId, tableId, staffId, json.dumps(orderedItems), json.dumps(completedItems)))
             self.cnx.commit()
 
         except mysql.connector.Error as error:
@@ -201,7 +201,7 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            sql = """SELECT order_id, table_nr, orders.staff_id, `name`, ordered_items, created_at, completed FROM 
+            sql = """SELECT order_id, table_nr, orders.staff_id, `name`, ordered_items, completed_items, created_at, completed FROM 
                      orders, staff WHERE orders.staff_id = staff.staff_id AND orders.order_id = '""" + orderId + "'"
 
             cursor = self.cnx.cursor()
@@ -228,8 +228,9 @@ class DatabaseIO:
             'staffId': result[2],
             'staffName': result[3],
             'orderedItems': json.loads(result[4]),
-            'createdAt': result[5],
-            'completed': result[6]
+            'completedItems': json.loads(result[5]),
+            'createdAt': result[6],
+            'completed': result[7]
         }
 
     def getMyOrders(self, staffId: str) -> List[Dict[str, Union[str, int, Dict[str, int], datetime]]] | None:
@@ -237,7 +238,7 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            sql = """SELECT order_id, table_nr, orders.staff_id, `name`, ordered_items, created_at, completed FROM 
+            sql = """SELECT order_id, table_nr, orders.staff_id, `name`, ordered_items, completed_items, created_at, completed FROM 
                      orders, staff WHERE orders.staff_id = staff.staff_id AND orders.staff_id = '""" + staffId + "'"
 
             cursor = self.cnx.cursor()
@@ -264,10 +265,43 @@ class DatabaseIO:
              'staffId': c,
              'staffName': d,
              'orderedItems': json.loads(e),
-             'createdAt': f,
-             'completed': g
-             } for a, b, c, d, e, f, g in result
+             'completedItems': json.loads(f),
+             'createdAt': g,
+             'completed': h
+             } for a, b, c, d, e, f, g, h in result
         ]
+
+    def updateCompletedItems(self, orderId: str, itemId: str, increaseCompleted: bool) -> bool:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sqlIncrease = """
+                            UPDATE orders SET completed_items = JSON_SET(completed_items, '$."{itemId}"', 
+                            FORMAT(JSON_EXTRACT(completed_items, '$."{itemId}"') + 1, 0)) 
+                            WHERE order_id = '{orderId}'
+                          """.format(orderId=orderId, itemId=itemId)
+
+            sqlDecrease = """
+                            UPDATE orders SET completed_items = JSON_SET(completed_items, '$."{itemId}"', 
+                            FORMAT(JSON_EXTRACT(completed_items, '$."{itemId}"') - 1, 0)) 
+                            WHERE order_id = '{orderId}'
+                          """.format(orderId=orderId, itemId=itemId)
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sqlIncrease if increaseCompleted else sqlDecrease)
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print('DatabaseIO.updateCompletedItems', error)
+            return False
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        return True
 
     def insertNewAccount(self, staffId: str,  name: str, password: str, salt: str) -> bool:
         cursor = None

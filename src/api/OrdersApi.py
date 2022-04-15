@@ -20,8 +20,10 @@ def addNewOrder(_, newAccessToken):
 
     orderId = generateUuid()
 
+    completedItems = {itemId: 0 for itemId in orderedItems.keys()}
+
     dbio = DatabaseIO()
-    hasInserted = dbio.insertOrderData(orderId, tableNr, staffId, orderedItems)
+    hasInserted = dbio.insertOrderData(orderId, tableNr, staffId, orderedItems, completedItems)
 
     if hasInserted:
         return create200Response(message='bSuccessOrderInsert', newAccessToken=newAccessToken)
@@ -53,3 +55,21 @@ def myOrders(staff, newAccessToken):
     data = dbio.getMyOrders(staff['staffId'])
 
     return create200ResponseData(body=data, newAccessToken=newAccessToken)
+
+
+@ordersApi.route('/completeOrderItem', methods=['POST'])
+@tokenRequired
+def completeOrderItem(_, newAccessToken):
+    orderId: str = request.json.get('orderId')
+    itemId: str = request.json.get('itemId')
+    increaseCompleted: bool = request.json.get('increaseCompleted')
+    if orderId is None or itemId is None or increaseCompleted is None:
+        return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
+
+    dbio = DatabaseIO()
+    hasInserted = dbio.updateCompletedItems(orderId, itemId, increaseCompleted)
+
+    if hasInserted:
+        return create200Response(message='bSuccessOrderUpdate', newAccessToken=newAccessToken)
+    else:
+        return create400Response(message='bErrorOrderUpdate', newAccessToken=newAccessToken)
