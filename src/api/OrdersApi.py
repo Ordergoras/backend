@@ -23,7 +23,13 @@ def addNewOrder(_, newAccessToken):
     completedItems = {itemId: 0 for itemId in orderedItems.keys()}
 
     dbio = DatabaseIO()
-    hasInserted = dbio.insertOrderData(orderId, tableNr, staffId, orderedItems, completedItems)
+    itemData = dbio.getStorageItemData([str(key) for key in orderedItems.keys()])
+
+    price = 0
+    for key in orderedItems:
+        price += orderedItems[key] * next(item for item in itemData if item['itemId'] == key)['price']
+
+    hasInserted = dbio.insertOrderData(orderId, tableNr, staffId, orderedItems, completedItems, price)
 
     if hasInserted:
         return create200Response(message='bSuccessOrderInsert', newAccessToken=newAccessToken)

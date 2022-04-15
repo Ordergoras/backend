@@ -60,7 +60,7 @@ class DatabaseIO:
 
         return True
 
-    def retrieveItemsFromStorage(self, retrievedItems: Dict[str, int]) -> Dict[str, Dict[str, int]] | None:
+    def retrieveItemsFromStorage(self, retrievedItems: Dict[str, int]) -> List[Dict[str, Union[str, int, ItemGroup, float]]] | None:
         cursor = None
         try:
             self.establishConnection()
@@ -84,7 +84,7 @@ class DatabaseIO:
 
         return self.getStorageItemData([key for key in retrievedItems.keys()])
 
-    def getStorageItemData(self, itemIds: List[str]) -> List[Dict[str, Union[str, int, ItemGroup]]] | None:
+    def getStorageItemData(self, itemIds: List[str]) -> List[Dict[str, Union[str, int, ItemGroup, float]]] | None:
         cursor = None
         result = []
         try:
@@ -113,7 +113,7 @@ class DatabaseIO:
 
         return [{'itemId': a, 'name': b, 'amount': c, 'group': d, 'price': e} for a, b, c, d, e in result]
 
-    def getStorageFullData(self) -> List[Dict[str, Union[str, int, ItemGroup]]] | None:
+    def getStorageFullData(self) -> List[Dict[str, Union[str, int, ItemGroup, float]]] | None:
         cursor = None
         result = []
         try:
@@ -173,16 +173,16 @@ class DatabaseIO:
 
         return {a: b for a, b in result}
 
-    def insertOrderData(self, orderId: str, tableId: int, staffId: str, orderedItems: Dict[str, int], completedItems: Dict[str, int]) -> bool:
+    def insertOrderData(self, orderId: str, tableId: int, staffId: str, orderItems: Dict[str, int], doneItems: Dict[str, int], price: float) -> bool:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = """INSERT INTO orders (order_id, table_nr, staff_id, ordered_items, completed_items, created_at) 
-                     VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)"""
+            sql = """INSERT INTO orders (order_id, table_nr, staff_id, ordered_items, completed_items, created_at, price) 
+                     VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s)"""
 
             cursor = self.cnx.cursor()
-            cursor.execute(sql, (orderId, tableId, staffId, json.dumps(orderedItems), json.dumps(completedItems)))
+            cursor.execute(sql, (orderId, tableId, staffId, json.dumps(orderItems), json.dumps(doneItems), price))
             self.cnx.commit()
 
         except mysql.connector.Error as error:
@@ -194,15 +194,15 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
-        self.retrieveItemsFromStorage(orderedItems)
+        self.retrieveItemsFromStorage(orderItems)
         return True
 
-    def getOrder(self, orderId: str) -> Dict[str, Union[str, int, Dict[str, int], datetime]] | None:
+    def getOrder(self, orderId: str) -> Dict[str, Union[str, int, Dict[str, int], datetime, float]] | None:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = """SELECT order_id, table_nr, orders.staff_id, `name`, ordered_items, completed_items, created_at, completed FROM 
+            sql = """SELECT order_id, table_nr, orders.staff_id, `name`, ordered_items, completed_items, created_at, completed, price FROM 
                      orders, staff WHERE orders.staff_id = staff.staff_id AND orders.order_id = '{orderId}'""".format(orderId=orderId)
 
             cursor = self.cnx.cursor()
@@ -231,15 +231,16 @@ class DatabaseIO:
             'orderedItems': json.loads(result[4]),
             'completedItems': json.loads(result[5]),
             'createdAt': result[6],
-            'completed': result[7]
+            'completed': result[7],
+            'price': result[8]
         }
 
-    def getMyOrders(self, staffId: str) -> List[Dict[str, Union[str, int, Dict[str, int], datetime]]] | None:
+    def getMyOrders(self, staffId: str) -> List[Dict[str, Union[str, int, Dict[str, int], datetime, float]]] | None:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = """SELECT order_id, table_nr, orders.staff_id, `name`, ordered_items, completed_items, created_at, completed FROM 
+            sql = """SELECT order_id, table_nr, orders.staff_id, `name`, ordered_items, completed_items, created_at, completed, price FROM 
                      orders, staff WHERE orders.staff_id = staff.staff_id AND orders.staff_id = '{staffId}'""".format(staffId=staffId)
 
             cursor = self.cnx.cursor()
@@ -268,8 +269,9 @@ class DatabaseIO:
              'orderedItems': json.loads(e),
              'completedItems': json.loads(f),
              'createdAt': g,
-             'completed': h
-             } for a, b, c, d, e, f, g, h in result
+             'completed': h,
+             'price': i
+             } for a, b, c, d, e, f, g, h, i in result
         ]
 
     def updateCompletedItems(self, orderId: str, itemId: str, increaseCompleted: bool) -> bool:
