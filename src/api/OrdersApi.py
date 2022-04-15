@@ -67,9 +67,12 @@ def completeOrderItem(_, newAccessToken):
         return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
 
     dbio = DatabaseIO()
-    hasInserted = dbio.updateCompletedItems(orderId, itemId, increaseCompleted)
+    hasUpdated = dbio.updateCompletedItems(orderId, itemId, increaseCompleted)
 
-    if hasInserted:
+    isCompleted = dbio.checkIfOrderComplete(orderId)
+    dbio.completeOrder(orderId, isCompleted)
+
+    if hasUpdated:
         return create200Response(message='bSuccessOrderUpdate', newAccessToken=newAccessToken)
     else:
         return create400Response(message='bErrorOrderUpdate', newAccessToken=newAccessToken)

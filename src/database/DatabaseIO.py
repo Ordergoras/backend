@@ -178,7 +178,8 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            sql = "INSERT INTO orders (order_id, table_nr, staff_id, ordered_items, completed_items) VALUES (%s, %s, %s, %s, %s)"
+            sql = """INSERT INTO orders (order_id, table_nr, staff_id, ordered_items, completed_items, created_at) 
+                     VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)"""
 
             cursor = self.cnx.cursor()
             cursor.execute(sql, (orderId, tableId, staffId, json.dumps(orderedItems), json.dumps(completedItems)))
@@ -278,13 +279,13 @@ class DatabaseIO:
 
             sqlIncrease = """
                             UPDATE orders SET completed_items = JSON_SET(completed_items, '$."{itemId}"', 
-                            FORMAT(JSON_EXTRACT(completed_items, '$."{itemId}"') + 1, 0)) 
+                            CAST(FORMAT(JSON_EXTRACT(completed_items, '$."{itemId}"') + 1, 0) AS UNSIGNED)) 
                             WHERE order_id = '{orderId}'
                           """.format(orderId=orderId, itemId=itemId)
 
             sqlDecrease = """
                             UPDATE orders SET completed_items = JSON_SET(completed_items, '$."{itemId}"', 
-                            FORMAT(JSON_EXTRACT(completed_items, '$."{itemId}"') - 1, 0)) 
+                            CAST(FORMAT(JSON_EXTRACT(completed_items, '$."{itemId}"') - 1, 0) AS UNSIGNED)) 
                             WHERE order_id = '{orderId}'
                           """.format(orderId=orderId, itemId=itemId)
 
@@ -300,6 +301,62 @@ class DatabaseIO:
                 self.cnx.close()
             if cursor is not None:
                 cursor.close()
+
+        return True
+
+    def completeOrder(self, orderId: str, isCompleted: bool) -> bool:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = "UPDATE orders SET completed = {isCompleted} WHERE order_id = '{orderId}'".format(isCompleted=isCompleted, orderId=orderId)
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print('DatabaseIO.completeOrder', error)
+            return False
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        return True
+
+    def checkIfOrderComplete(self, orderId: str) -> True | False:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = "SELECT ordered_items, completed_items FROM orders WHERE order_id = '{orderId}'".format(orderId=orderId)
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
+            result = cursor.fetchone()
+
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print('DatabaseIO.checkIfOrderComplete', error)
+            return False
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        if result is None:
+            return False
+
+        orderedItems = json.loads(result[0])
+        completedItems = json.loads(result[1])
+
+        for key in orderedItems.keys():
+            if completedItems[key] != orderedItems[key]:
+                return False
 
         return True
 
@@ -409,7 +466,7 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            sql = "INSERT INTO sessions (session_id, staff_id) VALUES (%s, %s)"
+            sql = "INSERT INTO sessions (session_id, staff_id, created_at) VALUES (%s, %s, CURRENT_TIMESTAMP)"
 
             cursor = self.cnx.cursor()
             cursor.execute(sql, (sessionId, staffId))
