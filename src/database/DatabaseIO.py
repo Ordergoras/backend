@@ -274,6 +274,45 @@ class DatabaseIO:
              } for a, b, c, d, e, f, g, h, i in result
         ]
 
+    def getOpenOrders(self) -> List[Dict[str, Union[str, int, Dict[str, int], datetime, float]]] | None:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = """SELECT order_id, table_nr, orders.staff_id, `name`, ordered_items, completed_items, created_at, completed, price FROM 
+                     orders, staff WHERE orders.staff_id = staff.staff_id AND orders.completed = FALSE"""
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
+            result = cursor.fetchall()
+
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print('DatabaseIO.getOpenOrders', error)
+            return None
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        if result is None:
+            return None
+
+        return [
+            {'orderId': a,
+             'tableNr': b,
+             'staffId': c,
+             'staffName': d,
+             'orderedItems': json.loads(e),
+             'completedItems': json.loads(f),
+             'createdAt': g,
+             'completed': h,
+             'price': i
+             } for a, b, c, d, e, f, g, h, i in result
+        ]
+
     def updateCompletedItems(self, orderId: str, itemId: str, increaseCompleted: bool) -> bool:
         cursor = None
         try:

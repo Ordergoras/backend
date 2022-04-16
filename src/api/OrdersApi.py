@@ -63,6 +63,15 @@ def myOrders(staff, newAccessToken):
     return create200ResponseData(body=data, newAccessToken=newAccessToken)
 
 
+@ordersApi.route('/openOrders', methods=['GET'])
+@tokenRequired
+def openOrders(_, newAccessToken):
+    dbio = DatabaseIO()
+    data = dbio.getOpenOrders()
+
+    return create200ResponseData(body=data, newAccessToken=newAccessToken)
+
+
 @ordersApi.route('/completeOrderItem', methods=['POST'])
 @tokenRequired
 def completeOrderItem(_, newAccessToken):
