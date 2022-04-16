@@ -178,8 +178,8 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            sql = """INSERT INTO orders (order_id, table_nr, staff_id, ordered_items, completed_items, created_at, price) 
-                     VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s)"""
+            sql = """INSERT INTO orders (order_id, table_nr, staff_id, ordered_items, completed_items, created_at, completed, price) 
+                     VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, FALSE, %s)"""
 
             cursor = self.cnx.cursor()
             cursor.execute(sql, (orderId, tableId, staffId, json.dumps(orderItems), json.dumps(doneItems), price))
