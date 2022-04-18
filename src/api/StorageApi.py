@@ -83,11 +83,3 @@ def retrieveItems(_, newAccessToken):
     data = dbio.getStorageItemData([key for key in retrievedItems])
 
     return create200ResponseData(body=data, newAccessToken=newAccessToken)
-
-
-@storageApi.route('/getItemIdMap', methods=['GET'])
-@tokenRequired
-def getItemIdMap(_, newAccessToken):
-    dbio = DatabaseIO()
-    data = dbio.getItemIdMap()
-    return create200ResponseData(body=data, newAccessToken=newAccessToken)
