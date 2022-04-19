@@ -28,14 +28,10 @@ def validateUserInput(input_type: str, **kwargs) -> bool:
         else:
             return False
     if input_type == 'orders':
-        if kwargs['tableNr'] == 0 or len(kwargs['staffId']) == 0 or len(kwargs['orderedItems']) == 0:
+        if kwargs['tableNr'] == 0 or len(kwargs['orderedItems']) == 0:
             return False
-        if kwargs['tableNr'] >= 0 and len(kwargs['staffId']) <= 255 and len(kwargs['orderedItems']) > 0:
-            dbio = DatabaseIO()
-            if dbio.getAccountById(kwargs['staffId']) is None:
-                return False
-            else:
-                return True
+        if kwargs['tableNr'] >= 0 and len(kwargs['orderedItems']) > 0:
+            return True
         else:
             return False
 

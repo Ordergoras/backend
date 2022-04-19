@@ -9,13 +9,12 @@ ordersApi = Blueprint('ordersApi', __name__)
 
 @ordersApi.route('/postOrder', methods=['POST'])
 @tokenRequired
-def addNewOrder(_, newAccessToken):
+def addNewOrder(staff, newAccessToken):
     tableNr: int = request.json.get('tableNr')
-    staffId: str = request.json.get('staffId')
     orderedItems: Dict[str, int] = request.json.get('orderedItems')
-    if tableNr is None or staffId is None or orderedItems is None:
+    if tableNr is None or orderedItems is None:
         return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
-    elif not validateUserInput('orders', tableNr=tableNr, staffId=staffId, orderedItems=orderedItems):
+    elif not validateUserInput('orders', tableNr=tableNr, orderedItems=orderedItems):
         return create400Response(message='bErrorFieldInvalid')
 
     orderId = generateUuid()
@@ -29,7 +28,7 @@ def addNewOrder(_, newAccessToken):
     for key in orderedItems:
         price += orderedItems[key] * next(item for item in itemData if item['itemId'] == key)['price']
 
-    hasInserted = dbio.insertOrderData(orderId, tableNr, staffId, orderedItems, completedItems, price)
+    hasInserted = dbio.insertOrderData(orderId, tableNr, staff['staffId'], orderedItems, completedItems, price)
 
     if hasInserted:
         return create200Response(message='bSuccessOrderInsert', newAccessToken=newAccessToken)
