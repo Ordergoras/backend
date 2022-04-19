@@ -28,7 +28,7 @@ def validateUserInput(input_type: str, **kwargs) -> bool:
         else:
             return False
     if input_type == 'orders':
-        if kwargs['tableNr'] == 0 or len(kwargs['orderedItems']) == 0:
+        if kwargs['tableNr'] < 0 or len(kwargs['orderedItems']) == 0:
             return False
         if kwargs['tableNr'] >= 0 and len(kwargs['orderedItems']) > 0:
             return True
