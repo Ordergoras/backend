@@ -144,6 +144,28 @@ class DatabaseIO:
 
         return {a: {'itemId': a, 'name': b, 'amount': c, 'group': d, 'price': e} for a, b, c, d, e in result}
 
+    def deleteItem(self, itemId: str) -> bool:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = "DELETE FROM storage WHERE id = '{itemId}'".format(itemId=itemId)
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print('DatabaseIO.deleteItem', error)
+            return False
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        return True
+
     def insertOrderData(self, orderId: str, tableId: int, staffId: str, orderItems: Dict[str, int], doneItems: Dict[str, int], price: float) -> bool:
         cursor = None
         try:

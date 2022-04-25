@@ -88,3 +88,20 @@ def retrieveItems(_, newAccessToken):
     data = dbio.getStorageItemData([key for key in retrievedItems])
 
     return create200ResponseData(body=data, newAccessToken=newAccessToken)
+
+
+@storageApi.route('/deleteItem', methods=['POST'])
+@tokenRequired
+def deleteItem(_, newAccessToken):
+    itemId: str = request.json.get('itemId')
+    if itemId is None:
+        return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
+
+    dbio = DatabaseIO()
+    name = dbio.getStorageItemData([itemId])[0]['name']
+    hasDeleted = dbio.deleteItem(itemId)
+
+    if hasDeleted:
+        return create200ResponseData(body={'message': 'bSuccessItemDelete', 'args': {'name': name}}, newAccessToken=newAccessToken)
+    else:
+        return create400Response(message='bErrorItemDelete', newAccessToken=newAccessToken)
