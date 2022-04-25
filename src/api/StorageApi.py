@@ -56,19 +56,24 @@ def addNewItem(_, newAccessToken):
         return create400Response(message='bErrorItemInsert', newAccessToken=newAccessToken)
 
 
-@storageApi.route('/updateItemAmount', methods=['POST'])
+@storageApi.route('/updateItem', methods=['POST'])
 @adminRequired
-def updateItemAmount(_, newAccessToken):
+def updateItem(_, newAccessToken):
     itemId: str = request.json.get('itemId')
-    amountChange: int = request.json.get('amountChange')
-    if itemId is None or amountChange is None:
+    name: str = request.json.get('name')
+    amount: int = request.json.get('amount')
+    group: ItemGroup = request.json.get('group')
+    price: float = request.json.get('price')
+    if itemId is None or name is None or amount is None or group is None or price is None:
         return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
 
     dbio = DatabaseIO()
-    dbio.updateStorageData(itemId, amountChange)
-    data = dbio.getStorageItemData([itemId])
+    hasUpdated = dbio.updateStorageData(itemId, name, amount, group, price)
 
-    return create200ResponseData(body=data, newAccessToken=newAccessToken)
+    if hasUpdated:
+        return create200ResponseData(body={'message': 'bSuccessItemUpdate', 'args': {'name': name}}, newAccessToken=newAccessToken)
+    else:
+        return create400Response(message='bErrorItemUpdate', newAccessToken=newAccessToken)
 
 
 @storageApi.route('/retrieveItems', methods=['POST'])

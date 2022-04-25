@@ -21,7 +21,7 @@ class DatabaseIO:
         try:
             self.establishConnection()
 
-            sql = "INSERT INTO storage (id, name, amount, `group`, price) VALUES (%s, %s, %s, %s, %s)"
+            sql = "INSERT INTO storage (id, `name`, amount, `group`, price) VALUES (%s, %s, %s, %s, %s)"
 
             cursor = self.cnx.cursor()
             cursor.execute(sql, (itemId, name, amount, group, price))
@@ -38,12 +38,13 @@ class DatabaseIO:
 
         return True
 
-    def updateStorageData(self, itemId: str, amountChange: int) -> bool:
+    def updateStorageData(self, itemId: str, name: str, amount: int, group: ItemGroup, price: float) -> bool:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = "UPDATE storage SET amount = amount + {diff} WHERE id = '{itemId}'".format(diff=str(amountChange), itemId=itemId)
+            sql = """UPDATE storage SET `name` = '{name}', amount = {amount}, `group` = '{group}', price = {price} 
+                     WHERE id = '{itemId}'""".format(name=name, amount=str(amount), group=str(group), price=str(price), itemId=itemId)
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
