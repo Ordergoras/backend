@@ -53,6 +53,18 @@ def getStaff(_, newAccessToken):
     return create200ResponseData(body=data, newAccessToken=newAccessToken)
 
 
+@staffApi.route('/getFullStaff', methods=['GET'])
+@adminRequired
+def getFullStaff(_, newAccessToken):
+    dbio = DatabaseIO()
+    data = dbio.getAllAccounts()
+
+    if data is None:
+        return create400Response(message='bDataNotFound', newAccessToken=newAccessToken)
+
+    return create200ResponseData(body=data, newAccessToken=newAccessToken)
+
+
 @staffApi.route('/setAdmin', methods=['POST'])
 @adminRequired
 def setAdminStatus(_, newAccessToken):

@@ -418,12 +418,39 @@ class DatabaseIO:
 
         return True
 
+    def getAllAccounts(self) -> List[Dict[str, Union[str, bool]]] | None:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = "SELECT staff_id, name, is_admin FROM staff"
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
+            result = cursor.fetchall()
+
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print('DatabaseIO.getAllAccounts', error)
+            return None
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        if result is None:
+            return None
+
+        return [{'staffId': a, 'name': b, 'isAdmin': bool(c)} for a, b, c in result]
+
     def getAccountById(self, staffId: str) -> Dict[str, Union[str, bool]] | None:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = "SELECT * FROM staff WHERE staff_id = '{staffId}'".format(staffId=staffId)
+            sql = "SELECT staff_id, name, is_admin FROM staff WHERE staff_id = '{staffId}'".format(staffId=staffId)
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
