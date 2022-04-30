@@ -39,16 +39,17 @@ def addNewItem(_, newAccessToken):
     amount: int = request.json.get('amount')
     group: ItemGroup = request.json.get('group')
     price: float = request.json.get('price')
+    information: Dict[str, str] = request.json.get('information')
 
-    if name is None or amount is None or group is None:
+    if name is None or amount is None or group is None or price is None:
         return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
-    elif not validateUserInput('storage', name=name, amount=amount, group=group):
+    elif not validateUserInput('storage', name=name, amount=amount, group=group, price=price):
         return create400Response(message='bErrorFieldInvalid')
 
     itemId = generateUuid()
 
     dbio = DatabaseIO()
-    hasInserted = dbio.insertStorageData(itemId, name, amount, group, price)
+    hasInserted = dbio.insertStorageData(itemId, name, amount, group, price, information)
 
     if hasInserted:
         return create200ResponseData(body={'message': 'bSuccessItemInsert', 'args': {'name': name, 'amount': amount}}, newAccessToken=newAccessToken)
@@ -64,11 +65,15 @@ def updateItem(_, newAccessToken):
     amount: int = request.json.get('amount')
     group: ItemGroup = request.json.get('group')
     price: float = request.json.get('price')
+    information: Dict[str, str] = request.json.get('information')
+
     if itemId is None or name is None or amount is None or group is None or price is None:
         return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
+    elif not validateUserInput('storage', name=name, amount=amount, group=group, price=price):
+        return create400Response(message='bErrorFieldInvalid')
 
     dbio = DatabaseIO()
-    hasUpdated = dbio.updateStorageData(itemId, name, amount, group, price)
+    hasUpdated = dbio.updateStorageData(itemId, name, amount, group, price, information)
 
     if hasUpdated:
         return create200ResponseData(body={'message': 'bSuccessItemUpdate', 'args': {'name': name}}, newAccessToken=newAccessToken)
