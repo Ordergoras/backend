@@ -3,7 +3,7 @@ from src.database.DatabaseIO import DatabaseIO
 from src.utils.authUtils import validateUserInput, generateSalt, generateHash, validateUser, adminRequired, generateUuid, decodeJwtToken, \
     tokenRequired
 from src.utils.responseUtils import create400Response, create401Response, create409Response, create200Response, create200ResponseData
-from src.utils.globals import ACCESS_TOKEN_LIFETIME, SESSION_TOKEN_LIFETIME
+from src.utils.globals import ACCESS_TOKEN_LIFETIME, SESSION_TOKEN_LIFETIME, COOKIE_OPTIONS
 
 staffApi = Blueprint('staffApi', __name__)
 
@@ -31,8 +31,8 @@ def registerStaff():
     data = validateUser(name, password)
 
     response = jsonify({'staffId': staffId, 'name': name, 'isAdmin': False})
-    response.set_cookie('accessToken', data['accessToken'], max_age=ACCESS_TOKEN_LIFETIME, httponly=True)
-    response.set_cookie('sessionToken', data['sessionToken'], max_age=SESSION_TOKEN_LIFETIME, httponly=True)
+    response.set_cookie('accessToken', data['accessToken'], max_age=ACCESS_TOKEN_LIFETIME, **COOKIE_OPTIONS)
+    response.set_cookie('sessionToken', data['sessionToken'], max_age=SESSION_TOKEN_LIFETIME, **COOKIE_OPTIONS)
     return response
 
 
@@ -97,8 +97,8 @@ def login():
 
     if data is not None:
         response = jsonify({'staffId': data['staffId'], 'name': name, 'isAdmin': data['isAdmin']})
-        response.set_cookie('accessToken', data['accessToken'], max_age=ACCESS_TOKEN_LIFETIME, httponly=True)
-        response.set_cookie('sessionToken', data['sessionToken'], max_age=SESSION_TOKEN_LIFETIME, httponly=True)
+        response.set_cookie('accessToken', data['accessToken'], max_age=ACCESS_TOKEN_LIFETIME, **COOKIE_OPTIONS)
+        response.set_cookie('sessionToken', data['sessionToken'], max_age=SESSION_TOKEN_LIFETIME, **COOKIE_OPTIONS)
         return response
     else:
         return create401Response(message='bErrorCredInvalid')
@@ -113,8 +113,8 @@ def logout():
             dbio.deleteSession(payload['sessionId'])
 
     response = create200Response(message='bSuccessLogout')
-    response.set_cookie('accessToken', '', expires=0)
-    response.set_cookie('sessionToken', '', expires=0)
+    response.set_cookie('accessToken', '', expires=0, **COOKIE_OPTIONS)
+    response.set_cookie('sessionToken', '', expires=0, **COOKIE_OPTIONS)
     return response
 
 
