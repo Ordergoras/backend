@@ -311,22 +311,22 @@ class DatabaseIO:
              } for a, b, c, d, e, f, g, h, i in result
         ]
 
-    def updateCompletedItems(self, orderId: str, itemId: str, increaseCompleted: bool) -> bool:
+    def updateCompletedItems(self, orderId: str, itemId: str, increaseCompleted: bool, amount: int) -> bool:
         cursor = None
         try:
             self.establishConnection()
 
             sqlIncrease = """
                             UPDATE orders SET completed_items = JSON_SET(completed_items, '$."{itemId}"', 
-                            CAST(FORMAT(JSON_EXTRACT(completed_items, '$."{itemId}"') + 1, 0) AS UNSIGNED)) 
+                            CAST(FORMAT(JSON_EXTRACT(completed_items, '$."{itemId}"') + {amount}, 0) AS UNSIGNED)) 
                             WHERE order_id = '{orderId}'
-                          """.format(orderId=orderId, itemId=itemId)
+                          """.format(orderId=orderId, itemId=itemId, amount=amount)
 
             sqlDecrease = """
                             UPDATE orders SET completed_items = JSON_SET(completed_items, '$."{itemId}"', 
-                            CAST(FORMAT(JSON_EXTRACT(completed_items, '$."{itemId}"') - 1, 0) AS UNSIGNED)) 
+                            CAST(FORMAT(JSON_EXTRACT(completed_items, '$."{itemId}"') - {amount}, 0) AS UNSIGNED)) 
                             WHERE order_id = '{orderId}'
-                          """.format(orderId=orderId, itemId=itemId)
+                          """.format(orderId=orderId, itemId=itemId, amount=amount)
 
             cursor = self.cnx.cursor()
             cursor.execute(sqlIncrease if increaseCompleted else sqlDecrease)

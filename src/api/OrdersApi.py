@@ -77,11 +77,12 @@ def completeOrderItem(_, newAccessToken):
     orderId: str = request.json.get('orderId')
     itemId: str = request.json.get('itemId')
     increaseCompleted: bool = request.json.get('increaseCompleted')
-    if orderId is None or itemId is None or increaseCompleted is None:
+    amount: int = request.json.get('amount')
+    if orderId is None or itemId is None or increaseCompleted is None or amount is None:
         return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
 
     dbio = DatabaseIO()
-    hasUpdated = dbio.updateCompletedItems(orderId, itemId, increaseCompleted)
+    hasUpdated = dbio.updateCompletedItems(orderId, itemId, increaseCompleted, amount)
 
     isCompleted = dbio.checkIfOrderComplete(orderId)
     dbio.completeOrder(orderId, isCompleted)
