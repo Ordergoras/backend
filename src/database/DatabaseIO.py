@@ -113,7 +113,14 @@ class DatabaseIO:
             return None
 
         return [
-            {'itemId': a, 'name': b, 'inStock': c, 'group': d, 'price': e, 'information': json.loads(f) if f else None} for a, b, c, d, e, f in result
+            {
+                'itemId': a,
+                'name': b,
+                'inStock': bool(c),
+                'group': d,
+                'price': e,
+                'information': json.loads(f) if f else None
+            } for a, b, c, d, e, f in result
         ]
 
     def getStorageFullData(self) -> Dict[str, Dict[str, Union[str, bool, ItemGroup, float, Dict[str, str]]]] | None:
@@ -145,7 +152,7 @@ class DatabaseIO:
             return None
 
         return {a: {
-            'itemId': a, 'name': b, 'inStock': c, 'group': d, 'price': e, 'information': json.loads(f) if f else None
+            'itemId': a, 'name': b, 'inStock': bool(c), 'group': d, 'price': e, 'information': json.loads(f) if f else None
         } for a, b, c, d, e, f in result}
 
     def deleteItem(self, itemId: str) -> bool:
