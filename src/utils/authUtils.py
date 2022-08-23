@@ -21,9 +21,11 @@ def validateUserInput(input_type: str, **kwargs) -> bool:
         else:
             return False
     if input_type == 'storage':
-        if len(kwargs['name']) == 0 or type(kwargs['inStock']) is not bool or len(kwargs['group']) == 0 or kwargs['price'] < 0:
+        if len(kwargs['name']) == 0 or type(kwargs['inStock']) is not bool or len(kwargs['group']) == 0 \
+                or (type(kwargs['price']) is not float and type(kwargs['price']) is not int):
             return False
-        if len(kwargs['name']) <= 255 and type(kwargs['inStock']) is bool and kwargs['group'] in ItemGroup.__members__.keys():
+        if len(kwargs['name']) <= 255 and type(kwargs['inStock']) is bool \
+                and kwargs['group'] in ItemGroup.__members__.keys() and (type(kwargs['price']) is float or type(kwargs['price']) is int):
             return True
         else:
             return False
