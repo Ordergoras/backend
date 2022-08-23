@@ -81,20 +81,6 @@ def updateItem(_, newAccessToken):
         return create400Response(message='bErrorItemUpdate', newAccessToken=newAccessToken)
 
 
-@storageApi.route('/retrieveItems', methods=['POST'])
-@tokenRequired
-def retrieveItems(_, newAccessToken):
-    retrievedItems: Dict[str, int] = request.json.get('retrievedItems')
-    if retrievedItems is None:
-        return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
-
-    dbio = DatabaseIO()
-    dbio.retrieveItemsFromStorage(retrievedItems)
-    data = dbio.getStorageItemData([key for key in retrievedItems])
-
-    return create200ResponseData(body=data, newAccessToken=newAccessToken)
-
-
 @storageApi.route('/deleteItem', methods=['POST'])
 @tokenRequired
 def deleteItem(_, newAccessToken):
