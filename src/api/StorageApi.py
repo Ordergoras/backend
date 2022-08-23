@@ -36,23 +36,23 @@ def getAllItems(_, newAccessToken):
 @adminRequired
 def addNewItem(_, newAccessToken):
     name: str = request.json.get('name')
-    amount: int = request.json.get('amount')
+    inStock: bool = request.json.get('inStock')
     group: ItemGroup = request.json.get('group')
     price: float = request.json.get('price')
     information: Dict[str, str] = request.json.get('information')
 
-    if name is None or amount is None or group is None or price is None:
+    if name is None or inStock is None or group is None or price is None:
         return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
-    elif not validateUserInput('storage', name=name, amount=amount, group=group, price=price):
+    elif not validateUserInput('storage', name=name, inStock=inStock, group=group, price=price):
         return create400Response(message='bErrorFieldInvalid')
 
     itemId = generateUuid()
 
     dbio = DatabaseIO()
-    hasInserted = dbio.insertStorageData(itemId, name, amount, group, price, information)
+    hasInserted = dbio.insertStorageData(itemId, name, inStock, group, price, information)
 
     if hasInserted:
-        return create200ResponseData(body={'message': 'bSuccessItemInsert', 'args': {'name': name, 'amount': amount}}, newAccessToken=newAccessToken)
+        return create200ResponseData(body={'message': 'bSuccessItemInsert', 'args': {'name': name}}, newAccessToken=newAccessToken)
     else:
         return create400Response(message='bErrorItemInsert', newAccessToken=newAccessToken)
 
@@ -62,18 +62,18 @@ def addNewItem(_, newAccessToken):
 def updateItem(_, newAccessToken):
     itemId: str = request.json.get('itemId')
     name: str = request.json.get('name')
-    amount: int = request.json.get('amount')
+    inStock: bool = request.json.get('inStock')
     group: ItemGroup = request.json.get('group')
     price: float = request.json.get('price')
     information: Dict[str, str] = request.json.get('information')
 
-    if itemId is None or name is None or amount is None or group is None or price is None:
+    if itemId is None or name is None or inStock is None or group is None or price is None:
         return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
-    elif not validateUserInput('storage', name=name, amount=amount, group=group, price=price):
+    elif not validateUserInput('storage', name=name, inStock=inStock, group=group, price=price):
         return create400Response(message='bErrorFieldInvalid')
 
     dbio = DatabaseIO()
-    hasUpdated = dbio.updateStorageData(itemId, name, amount, group, price, information)
+    hasUpdated = dbio.updateStorageData(itemId, name, inStock, group, price, information)
 
     if hasUpdated:
         return create200ResponseData(body={'message': 'bSuccessItemUpdate', 'args': {'name': name}}, newAccessToken=newAccessToken)

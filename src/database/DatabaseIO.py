@@ -16,15 +16,15 @@ class DatabaseIO:
         except mysql.connector.Error as error:
             print('DatabaseIO.establishConnection', error)
 
-    def insertStorageData(self, itemId: str, name: str, amount: int, group: ItemGroup, price: float, information: Dict[str, str]) -> bool:
+    def insertStorageData(self, itemId: str, name: str, inStock: bool, group: ItemGroup, price: float, information: Dict[str, str]) -> bool:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = "INSERT INTO storage (id, `name`, amount, `group`, price, information) VALUES (%s, %s, %s, %s, %s, %s)"
+            sql = "INSERT INTO storage (id, `name`, in_stock, `group`, price, information) VALUES (%s, %s, %s, %s, %s, %s)"
 
             cursor = self.cnx.cursor()
-            cursor.execute(sql, (itemId, name, amount, group, price, json.dumps(information)))
+            cursor.execute(sql, (itemId, name, inStock, group, price, json.dumps(information)))
             self.cnx.commit()
 
         except mysql.connector.Error as error:
@@ -38,13 +38,13 @@ class DatabaseIO:
 
         return True
 
-    def updateStorageData(self, itemId: str, name: str, amount: int, group: ItemGroup, price: float, information: Dict[str, str]) -> bool:
+    def updateStorageData(self, itemId: str, name: str, inStock: bool, group: ItemGroup, price: float, information: Dict[str, str]) -> bool:
         cursor = None
         try:
             self.establishConnection()
 
-            sql = """UPDATE storage SET `name` = '{name}', amount = {amount}, `group` = '{group}', price = {price}, information = '{information}'
-                     WHERE id = '{itemId}'""".format(name=name, amount=str(amount), group=str(group), price=str(price),
+            sql = """UPDATE storage SET `name` = '{name}', in_stock = {inStock}, `group` = '{group}', price = {price}, information = '{information}'
+                     WHERE id = '{itemId}'""".format(name=name, inStock=inStock, group=str(group), price=str(price),
                                                      information=json.dumps(information), itemId=itemId)
 
             cursor = self.cnx.cursor()
@@ -62,31 +62,30 @@ class DatabaseIO:
 
         return True
 
-    def retrieveItemsFromStorage(self, retrievedItems: Dict[str, int]) -> List[Dict[str, Union[str, int, ItemGroup, float, Dict[str, str]]]] | None:
+    def changeItemAvailability(self, itemId: str, inStock: bool) -> bool:
         cursor = None
         try:
             self.establishConnection()
 
-            for key, value in retrievedItems.items():
-                sql = "UPDATE storage SET amount = amount - {diff} WHERE id = '{key}'".format(diff=str(value), key=key)
+            sql = "UPDATE storage SET in_stock = {inStock} WHERE id = '{itemId}'".format(inStock=inStock, itemId=itemId)
 
-                cursor = self.cnx.cursor()
-                cursor.execute(sql)
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
 
             self.cnx.commit()
 
         except mysql.connector.Error as error:
-            print('DatabaseIO.retrieveItemsFromStorage', error)
-            return None
+            print('DatabaseIO.changeItemAvailability', error)
+            return False
         finally:
             if self.cnx.is_connected():
                 self.cnx.close()
             if cursor is not None:
                 cursor.close()
 
-        return self.getStorageItemData([key for key in retrievedItems.keys()])
+        return True
 
-    def getStorageItemData(self, itemIds: List[str]) -> List[Dict[str, Union[str, int, ItemGroup, float, Dict[str, str]]]] | None:
+    def getStorageItemData(self, itemIds: List[str]) -> List[Dict[str, Union[str, bool, ItemGroup, float, Dict[str, str]]]] | None:
         cursor = None
         result = []
         try:
@@ -114,10 +113,10 @@ class DatabaseIO:
             return None
 
         return [
-            {'itemId': a, 'name': b, 'amount': c, 'group': d, 'price': e, 'information': json.loads(f) if f else None} for a, b, c, d, e, f in result
+            {'itemId': a, 'name': b, 'inStock': c, 'group': d, 'price': e, 'information': json.loads(f) if f else None} for a, b, c, d, e, f in result
         ]
 
-    def getStorageFullData(self) -> Dict[str, Dict[str, Union[str, int, ItemGroup, float, Dict[str, str]]]] | None:
+    def getStorageFullData(self) -> Dict[str, Dict[str, Union[str, bool, ItemGroup, float, Dict[str, str]]]] | None:
         cursor = None
         result = []
         try:
@@ -146,7 +145,7 @@ class DatabaseIO:
             return None
 
         return {a: {
-            'itemId': a, 'name': b, 'amount': c, 'group': d, 'price': e, 'information': json.loads(f) if f else None
+            'itemId': a, 'name': b, 'inStock': c, 'group': d, 'price': e, 'information': json.loads(f) if f else None
         } for a, b, c, d, e, f in result}
 
     def deleteItem(self, itemId: str) -> bool:
@@ -192,7 +191,6 @@ class DatabaseIO:
             if cursor is not None:
                 cursor.close()
 
-        self.retrieveItemsFromStorage(orderItems)
         return True
 
     def getOrder(self, orderId: str) -> Dict[str, Union[str, int, Dict[str, int], datetime, float]] | None:
