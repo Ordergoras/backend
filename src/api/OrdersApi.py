@@ -31,7 +31,7 @@ def addNewOrder(staff, newAccessToken):
     hasInserted = dbio.insertOrderData(orderId, tableNr, staff['staffId'], orderedItems, completedItems, price)
 
     if hasInserted:
-        return create200Response(message='bSuccessOrderInsert', newAccessToken=newAccessToken)
+        return create200ResponseData({'message': 'bSuccessOrderInsert', 'orderId': orderId}, newAccessToken=newAccessToken)
     else:
         return create400Response(message='bErrorOrderInsert', newAccessToken=newAccessToken)
 
@@ -51,6 +51,23 @@ def getOrder(_, newAccessToken):
         return create400Response(message='bDataNotFound', newAccessToken=newAccessToken)
 
     return create200ResponseData(body=data, newAccessToken=newAccessToken)
+
+
+@ordersApi.route('/deleteOrder', methods=['POST'])
+@tokenRequired
+def deleteOrder(_, newAccessToken):
+    orderId: str = request.json.get('orderId')
+    if orderId is None:
+        return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
+
+    dbio = DatabaseIO()
+    data = dbio.getOrder(orderId)
+    hasDeleted = dbio.deleteOrder(orderId)
+
+    if hasDeleted:
+        return create200ResponseData(body={'message': 'bSuccessOrderDelete', 'order': data}, newAccessToken=newAccessToken)
+    else:
+        return create400Response(message='bErrorOrderDelete', newAccessToken=newAccessToken)
 
 
 @ordersApi.route('/myOrders', methods=['GET'])

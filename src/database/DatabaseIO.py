@@ -397,6 +397,28 @@ class DatabaseIO:
 
         return True
 
+    def deleteOrder(self, orderId: str) -> bool:
+        cursor = None
+        try:
+            self.establishConnection()
+
+            sql = "DELETE FROM orders WHERE order_id = '{orderId}'".format(orderId=orderId)
+
+            cursor = self.cnx.cursor()
+            cursor.execute(sql)
+            self.cnx.commit()
+
+        except mysql.connector.Error as error:
+            print('DatabaseIO.deleteOrder', error)
+            return False
+        finally:
+            if self.cnx.is_connected():
+                self.cnx.close()
+            if cursor is not None:
+                cursor.close()
+
+        return True
+
     def insertNewAccount(self, staffId: str,  name: str, password: str, salt: str) -> bool:
         cursor = None
         try:
