@@ -24,7 +24,7 @@ class DatabaseIO:
             sql = "INSERT INTO storage (id, `name`, in_stock, `group`, price, information) VALUES (%s, %s, %s, %s, %s, %s)"
 
             cursor = self.cnx.cursor()
-            cursor.execute(sql, (itemId, name, inStock, group, price, json.dumps(information)))
+            cursor.execute(sql, (itemId, name, inStock, group, price, json.dumps(information, ensure_ascii=False)))
             self.cnx.commit()
 
         except mysql.connector.Error as error:
@@ -45,7 +45,7 @@ class DatabaseIO:
 
             sql = """UPDATE storage SET `name` = '{name}', in_stock = {inStock}, `group` = '{group}', price = {price}, information = '{information}'
                      WHERE id = '{itemId}'""".format(name=name, inStock=inStock, group=str(group), price=str(price),
-                                                     information=json.dumps(information), itemId=itemId)
+                                                     information=json.dumps(information, ensure_ascii=False), itemId=itemId)
 
             cursor = self.cnx.cursor()
             cursor.execute(sql)
