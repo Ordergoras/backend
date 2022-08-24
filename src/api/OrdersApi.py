@@ -11,7 +11,7 @@ ordersApi = Blueprint('ordersApi', __name__)
 @tokenRequired
 def addNewOrder(staff, newAccessToken):
     tableNr: int = request.json.get('tableNr')
-    orderedItems: Dict[str, int] = request.json.get('orderedItems')
+    orderedItems: Dict[str, Dict[str, int]] = request.json.get('orderedItems')
     if tableNr is None or orderedItems is None:
         return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
     elif not validateUserInput('orders', tableNr=tableNr, orderedItems=orderedItems):
@@ -19,14 +19,22 @@ def addNewOrder(staff, newAccessToken):
 
     orderId = generateUuid()
 
-    completedItems = {itemId: 0 for itemId in orderedItems.keys()}
+    completedItems = {}
+    for outerKey in orderedItems:
+        for key in orderedItems[outerKey]:
+            completedItems[outerKey] = {key: 0}
 
     dbio = DatabaseIO()
     itemData = dbio.getStorageItemData([str(key) for key in orderedItems.keys()])
 
     price = 0
-    for key in orderedItems:
-        price += orderedItems[key] * next(item for item in itemData if item['itemId'] == key)['price']
+    for outerKey in orderedItems:
+        for key in orderedItems[outerKey]:
+            if outerKey == key:
+                price += orderedItems[outerKey][key] * next(item for item in itemData if item['itemId'] == outerKey)['price']
+            else:
+                winePrice = float(next(item for item in itemData if item['itemId'] == outerKey)['information'][key + 'Price'])
+                price += orderedItems[outerKey][key] * winePrice
 
     hasInserted = dbio.insertOrderData(orderId, tableNr, staff['staffId'], orderedItems, completedItems, price)
 
@@ -92,14 +100,15 @@ def openOrders(_, newAccessToken):
 @tokenRequired
 def completeOrderItem(_, newAccessToken):
     orderId: str = request.json.get('orderId')
+    outerKey: str = request.json.get('outerKey')
     itemId: str = request.json.get('itemId')
     increaseCompleted: bool = request.json.get('increaseCompleted')
     amount: int = request.json.get('amount')
-    if orderId is None or itemId is None or increaseCompleted is None or amount is None:
+    if orderId is None or outerKey is None or itemId is None or increaseCompleted is None or amount is None:
         return create400Response(message='bErrorFieldCheck', newAccessToken=newAccessToken)
 
     dbio = DatabaseIO()
-    hasUpdated = dbio.updateCompletedItems(orderId, itemId, increaseCompleted, amount)
+    hasUpdated = dbio.updateCompletedItems(orderId, outerKey, itemId, increaseCompleted, amount)
 
     isCompleted = dbio.checkIfOrderComplete(orderId)
     dbio.completeOrder(orderId, isCompleted)

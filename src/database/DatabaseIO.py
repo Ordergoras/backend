@@ -177,7 +177,8 @@ class DatabaseIO:
 
         return True
 
-    def insertOrderData(self, orderId: str, tableId: int, staffId: str, orderItems: Dict[str, int], doneItems: Dict[str, int], price: float) -> bool:
+    def insertOrderData(self, orderId: str, tableId: int, staffId: str,
+                        orderItems: Dict[str, Dict[str, int]], doneItems: Dict[str, Dict[str, int]], price: float) -> bool:
         cursor = None
         try:
             self.establishConnection()
@@ -316,22 +317,22 @@ class DatabaseIO:
              } for a, b, c, d, e, f, g, h, i in result
         ]
 
-    def updateCompletedItems(self, orderId: str, itemId: str, increaseCompleted: bool, amount: int) -> bool:
+    def updateCompletedItems(self, orderId: str, outerKey: str, itemId: str, increaseCompleted: bool, amount: int) -> bool:
         cursor = None
         try:
             self.establishConnection()
 
             sqlIncrease = """
-                            UPDATE orders SET completed_items = JSON_SET(completed_items, '$."{itemId}"', 
-                            CAST(FORMAT(JSON_EXTRACT(completed_items, '$."{itemId}"') + {amount}, 0) AS UNSIGNED)) 
+                            UPDATE orders SET completed_items = JSON_SET(completed_items, '$."{outerKey}"."{itemId}"', 
+                            CAST(FORMAT(JSON_EXTRACT(completed_items, '$."{outerKey}"."{itemId}"') + {amount}, 0) AS UNSIGNED)) 
                             WHERE order_id = '{orderId}'
-                          """.format(orderId=orderId, itemId=itemId, amount=amount)
+                          """.format(orderId=orderId, outerKey=outerKey, itemId=itemId, amount=amount)
 
             sqlDecrease = """
-                            UPDATE orders SET completed_items = JSON_SET(completed_items, '$."{itemId}"', 
-                            CAST(FORMAT(JSON_EXTRACT(completed_items, '$."{itemId}"') - {amount}, 0) AS UNSIGNED)) 
+                            UPDATE orders SET completed_items = JSON_SET(completed_items, '$."{outerKey}"."{itemId}"', 
+                            CAST(FORMAT(JSON_EXTRACT(completed_items, '$."{outerKey}"."{itemId}"') - {amount}, 0) AS UNSIGNED)) 
                             WHERE order_id = '{orderId}'
-                          """.format(orderId=orderId, itemId=itemId, amount=amount)
+                          """.format(orderId=orderId, outerKey=outerKey, itemId=itemId, amount=amount)
 
             cursor = self.cnx.cursor()
             cursor.execute(sqlIncrease if increaseCompleted else sqlDecrease)
