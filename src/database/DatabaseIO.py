@@ -12,7 +12,8 @@ class DatabaseIO:
     def establishConnection(self) -> None:
         try:
             self.cnx = mysql.connector.connect(user=os.getenv('dbUser'), password=os.getenv('dbPass'),
-                                               host=os.getenv('dbHost'), database=os.getenv('dbName'))
+                                               host=os.getenv('dbLocal'), database=os.getenv('dbName'), 
+                                               port=os.getenv('dbPort'))
         except mysql.connector.Error as error:
             print('DatabaseIO.establishConnection', error)
 
