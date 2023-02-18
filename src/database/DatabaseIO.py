@@ -3,7 +3,7 @@ from typing import List, Dict, Union
 import mysql.connector
 import os
 import json
-from src.utils.types import ItemGroup
+from utils.types import ItemGroup
 
 
 class DatabaseIO:

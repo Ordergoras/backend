@@ -1,9 +1,9 @@
 import os
 from flask import Flask, send_from_directory
 from flask_cors import CORS
-from src.api.OrdersApi import ordersApi
-from src.api.StaffApi import staffApi
-from src.api.StorageApi import storageApi
+from api.OrdersApi import ordersApi
+from api.StaffApi import staffApi
+from api.StorageApi import storageApi
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)

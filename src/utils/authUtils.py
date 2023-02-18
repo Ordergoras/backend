@@ -6,10 +6,10 @@ from uuid import uuid4
 from flask import request, Response
 import jwt
 from datetime import datetime, timedelta
-from src.database.DatabaseIO import DatabaseIO
-from src.utils.responseUtils import create401Response, create400Response
-from src.utils.globals import ACCESS_TOKEN_LIFETIME, SESSION_TOKEN_LIFETIME
-from src.utils.types import ItemGroup
+from database.DatabaseIO import DatabaseIO
+from utils.responseUtils import create401Response, create400Response
+from utils.globals import ACCESS_TOKEN_LIFETIME, SESSION_TOKEN_LIFETIME
+from utils.types import ItemGroup
 
 
 def validateUserInput(input_type: str, **kwargs) -> bool:

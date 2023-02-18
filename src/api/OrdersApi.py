@@ -1,8 +1,8 @@
 from typing import Dict
 from flask import Blueprint, request
-from src.database.DatabaseIO import DatabaseIO
-from src.utils.authUtils import generateUuid, tokenRequired, validateUserInput
-from src.utils.responseUtils import create400Response, create200Response, create200ResponseData
+from database.DatabaseIO import DatabaseIO
+from utils.authUtils import generateUuid, tokenRequired, validateUserInput
+from utils.responseUtils import create400Response, create200Response, create200ResponseData
 
 ordersApi = Blueprint('ordersApi', __name__)
 

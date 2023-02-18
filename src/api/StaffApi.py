@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify
-from src.database.DatabaseIO import DatabaseIO
-from src.utils.authUtils import validateUserInput, generateSalt, generateHash, validateUser, adminRequired, generateUuid, decodeJwtToken, \
+from database.DatabaseIO import DatabaseIO
+from utils.authUtils import validateUserInput, generateSalt, generateHash, validateUser, adminRequired, generateUuid, decodeJwtToken, \
     tokenRequired
-from src.utils.responseUtils import create400Response, create401Response, create409Response, create200Response, create200ResponseData
-from src.utils.globals import ACCESS_TOKEN_LIFETIME, SESSION_TOKEN_LIFETIME, COOKIE_OPTIONS
+from utils.responseUtils import create400Response, create401Response, create409Response, create200Response, create200ResponseData
+from utils.globals import ACCESS_TOKEN_LIFETIME, SESSION_TOKEN_LIFETIME, COOKIE_OPTIONS
 
 staffApi = Blueprint('staffApi', __name__)
 

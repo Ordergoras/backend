@@ -1,7 +1,7 @@
 import json
 from typing import Dict, List
 from flask import Response, jsonify
-from src.utils.globals import ACCESS_TOKEN_LIFETIME, COOKIE_OPTIONS
+from utils.globals import ACCESS_TOKEN_LIFETIME, COOKIE_OPTIONS
 
 
 def create200Response(message: str, newAccessToken: str = None) -> Response:
