@@ -4,7 +4,7 @@ This project builds a simple REST API for the inventory management plattform Ord
 
 ## Setup
 - Running MySQL Server needed for backend storage
-- Install dependecies according to requirements.txt `pip install -r requirements.txt`
+- Install dependencies according to requirements.txt `pip install -r requirements.txt`
 - Necessary environment variables have to be declared
 - Run /src/main.py
 
